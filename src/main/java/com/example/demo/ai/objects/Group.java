@@ -19,6 +19,14 @@ public class Group<T> {
         }
     }
 
+    public void set(Side side, T value) {
+        if (side == Side.WHITE) {
+            this.white = value;
+        } else {
+            this.black = value;
+        }
+    }
+
     public T white() {
         return this.white;
     }

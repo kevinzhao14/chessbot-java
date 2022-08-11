@@ -17,6 +17,14 @@ public class Pos {
         return y;
     }
 
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
     public Pos clone() {
         return new Pos(x, y);
     }
@@ -28,5 +36,9 @@ public class Pos {
     @Override
     public String toString() {
         return "[" + x + ", " + y + "]";
+    }
+
+    public int[] toArray() {
+        return new int[]{x, y};
     }
 }

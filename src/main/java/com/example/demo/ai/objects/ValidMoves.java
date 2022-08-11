@@ -4,26 +4,28 @@ import java.util.ArrayList;
 
 public class ValidMoves {
     ArrayList<Pos> moves;
+    ArrayList<Pin> pins;
     ArrayList<ArrayList<Pos>> control;
 
     public ValidMoves(ArrayList<Pos> moves) {
         this.moves = moves;
+        this.control = null;
     }
 
-    public ValidMoves(ArrayList<ArrayList<Pos>> control, ArrayList<Pos> pins) {
+    public ValidMoves(ArrayList<ArrayList<Pos>> control, ArrayList<Pin> pins) {
         this.control = control;
-        this.moves = pins;
+        this.pins = pins;
     }
 
-    public ArrayList<ArrayList<Pos>> getControl() {
+    public ArrayList<ArrayList<Pos>> control() {
         return control;
     }
 
-    public ArrayList<Pos> getMoves() {
+    public ArrayList<Pos> moves() {
         return moves;
     }
 
-    public ArrayList<Pos> getPins() {
-        return moves;
+    public ArrayList<Pin> pins() {
+        return pins;
     }
 }

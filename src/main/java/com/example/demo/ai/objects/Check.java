@@ -18,4 +18,8 @@ public class Check {
         }
         return new Check(this.by.clone(), newPath);
     }
+
+    public ArrayList<Pos> path() {
+        return path;
+    }
 }
