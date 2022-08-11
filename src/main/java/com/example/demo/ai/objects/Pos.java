@@ -1,19 +1,32 @@
 package com.example.demo.ai.objects;
 
 public class Pos {
-    int row;
-    int col;
+    private int y;
+    private int x;
 
-    public Pos(int col, int row) {
-        this.col = col;
-        this.row = row;
+    public Pos(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 
     public int x() {
-        return col;
+        return x;
     }
 
     public int y() {
-        return row;
+        return y;
+    }
+
+    public Pos clone() {
+        return new Pos(x, y);
+    }
+
+    public boolean equals(Pos other) {
+        return this.x == other.x && this.y == other.y;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + x + ", " + y + "]";
     }
 }

@@ -18,4 +18,12 @@ public class Group<T> {
             return null;
         }
     }
+
+    public T white() {
+        return this.white;
+    }
+
+    public T black() {
+        return this.black;
+    }
 }

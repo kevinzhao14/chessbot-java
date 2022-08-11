@@ -1,32 +1,72 @@
 package com.example.demo.ai;
 
 import com.example.demo.ai.objects.Pos;
+import com.example.demo.ai.objects.ValidMoves;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.util.ArrayList;
 
 public class Bot {
     @Value("${ai.depth}")
-    int DEPTH;
+    static int DEPTH;
 
     @Value("${ai.mult}")
-    int MULT;
+    static int MULT;
 
     @Value("${ai.debug}")
-    boolean DEBUG;
+    static boolean DEBUG;
 
     @Value("${ai.log}")
-    boolean LOG;
+    static boolean LOG;
 
     @Value("${ai.extradepth}")
-    boolean EXTRA_DEPTH;
+    static boolean EXTRA_DEPTH;
 
 
     private int nodes = 0;
 
-    public BestMove getMove(String fen) {
+    static BestMove getMove(String fen) {
+        State state = setupState(fen);
+        if (LOG) {
+            Util.printBoard(state, true);
+        }
 
+        // TODO: extraDepth
+
+        long start = System.currentTimeMillis();
+        Move best = bestMove(state);
+        long total = System.currentTimeMillis() - start;
+
+        System.out.println("\nMove: \t" + best.move[0] + " -> " + best.move[1]);
+        System.out.println("Score: \t" + Math.round(best.score * 1000) / 1000);
+
+        Pos from = null;
+        Pos to = null;
+
+        if (best.move != null) {
+            from = best.move[0];
+            to = best.move[1];
+
+        }
+
+
+        return null;
     }
 
-    private State setupState(String fen) {
+    static State setupState(String fen) {
+        return null;
+    }
+
+    static Move bestMove(State state) {
+        return null;
+    }
+
+    static ValidMoves getValidMoves(char piece, Pos p, State state, boolean control) {
+        return null;
+    }
+
+    static ValidMoves getValidMoves(char piece, Pos p, State state) {
+        return getValidMoves(piece, p, state, false);
     }
 
 
@@ -34,5 +74,11 @@ public class Bot {
         Pos from;
         Pos to;
         String promote;
+    }
+
+    private class Move {
+        Pos[] move;
+        double score;
+        ArrayList<Pos> line;
     }
 }
