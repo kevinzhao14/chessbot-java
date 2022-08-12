@@ -29,8 +29,9 @@ public class Pos {
         return new Pos(x, y);
     }
 
-    public boolean equals(Pos other) {
-        return this.x == other.x && this.y == other.y;
+    public boolean equals(Object other) {
+        Pos otherp = (Pos) other;
+        return this.x == otherp.x && this.y == otherp.y;
     }
 
     @Override

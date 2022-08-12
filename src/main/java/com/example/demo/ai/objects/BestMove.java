@@ -10,6 +10,7 @@ public class BestMove {
     Pos from;
     Pos to;
     char promote;
+    long nodes;
 
     public BestMove(Pos from, Pos to, char promote) {
         this.from = from;
@@ -27,6 +28,14 @@ public class BestMove {
 
     public void setPromote(char promote) {
         this.promote = promote;
+    }
+
+    public long getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(long nodes) {
+        this.nodes = nodes;
     }
 
     @Override

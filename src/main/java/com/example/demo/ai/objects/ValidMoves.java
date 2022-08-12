@@ -28,4 +28,13 @@ public class ValidMoves {
     public ArrayList<Pin> pins() {
         return pins;
     }
+
+    @Override
+    public String toString() {
+        return "ValidMoves{" +
+                "moves=" + moves +
+                ", pins=" + pins +
+                ", control=" + control +
+                '}';
+    }
 }

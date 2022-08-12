@@ -8,14 +8,15 @@ import com.example.demo.ai.objects.Pin;
 import com.example.demo.ai.objects.Pos;
 import com.example.demo.ai.objects.Side;
 import com.example.demo.ai.objects.ValidMoves;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import static com.example.demo.ai.Util.an;
 import static com.example.demo.ai.Util.is;
 import static com.example.demo.ai.Util.isBlack;
+import static com.example.demo.ai.Util.log;
 import static com.example.demo.ai.Util.offBoard;
 import static com.example.demo.ai.Util.sideOf;
 
@@ -26,25 +27,28 @@ public class Bot {
 
     static boolean DEBUG = false;
 
-    static boolean LOG = true;
+    static boolean LOG = false;
 
-    static boolean EXTRA_DEPTH = false;
+    static boolean EXTRA_DEPTH = true;
 
     private static int nodes = 0;
 
-    public static BestMove getMove(String fen) {
+    public static BestMove getMove(String fen, boolean testMode) {
         State state = setupState(fen);
         if (LOG) {
             Util.printBoard(state, true);
+            System.out.println(getValidMoves('P', new Pos(7, 1), state));
         }
+
+
+
+//        return new BestMove(null, null, '\0'); /*
 
         // TODO: extraDepth
 
         long start = System.currentTimeMillis();
         MoveInfo best = bestMove(state);
         long total = System.currentTimeMillis() - start;
-
-        System.out.println("Best: " + best.toString());
 
         Pos from = null;
         Pos to = null;
@@ -84,10 +88,20 @@ public class Bot {
         System.out.println("Nodes: " + nodes);
         System.out.println("Time: " + total + "ms\n");
 
+        if (testMode) {
+            res.setNodes(nodes);
+        }
+
         return res;
+
+//        */
     }
 
-    static State setupState(String fen) {
+    public static BestMove getMove(String fen) {
+        return getMove(fen, false);
+    }
+
+    public static State setupState(String fen) {
         System.out.println("FEN: " + fen);
         String[] data = fen.split(" ");
         State state = new State();
@@ -136,7 +150,7 @@ public class Bot {
             state.enPassant(Util.coordFromAn(data[3]));
         }
 
-        state.calcControls(state.turn());
+        state.calcControls(state.turn().opp());
 
         state.calcCheck();
 
@@ -283,7 +297,7 @@ public class Bot {
         ArrayList<Pos> temp = new ArrayList<>();
 
         class Pather {
-            void go(Pos pos, int from, int to) {
+            void go(Pos p, int from, int to) {
                 for (int i = from; i < to; i++) {
                     Pos pinPiece = null;
                     boolean pin = false;
@@ -291,10 +305,11 @@ public class Bot {
                     ArrayList<Pos> pinMoves = new ArrayList<>();
                     ArrayList<Pos> path = new ArrayList<>();
 
-                    pinMoves.add(pos.clone());
+                    pinMoves.add(p.clone());
 
-                    pos = Util.go(pos, i);
+                    Pos pos = Util.go(p, i);
                     while (!Util.offBoard(pos)) {
+//                    if (getControl && p.equals(new Pos(4, 1))) log("p", i, pos, path, control);
                         char ap = state.at(pos);
 
                         if (ap != 0) {
@@ -346,6 +361,7 @@ public class Bot {
                         control.add(path);
                         if (kingPin) {
                             new Pather().go(pos.clone(), i, i + 1);
+//                            log("pather", p, control);
                         }
                     }
                 }
@@ -359,7 +375,8 @@ public class Bot {
                 if (!getControl) {
                     if (state.at(single) == 0) {
                         moves.add(single);
-                        if (single.x() == (isBlack(side) ? 0 : 7)) {
+                        // check for promotion
+                        if (single.y() == (isBlack(side) ? 0 : 7)) {
                             for (int i = 1; i < 4; i++) {
                                 moves.add(new Pos(single.x(), single.y() + dir * i));
                             }
@@ -397,7 +414,7 @@ public class Bot {
                         sim.remove(p);
                         sim.remove(new Pos(tp.x(), p.y()));
                         sim.calcControls(side.opp());
-                        if (sim.isControlled(sim.kings().get(side), side.opp()) != null) {
+                        if (sim.isControlled(sim.kings().get(side), side.opp()) == null) {
                             moves.add(tp);
                         }
                     } else if (take != 0 && sideOf(take) != side) {
@@ -459,18 +476,20 @@ public class Bot {
                 }
 
                 // castling
-                if (!getControl && state.isControlled(p, side.opp()) != null) {
+                if (!getControl && state.isControlled(p, side.opp()) == null) {
                     boolean[] castle = state.castle().get(side);
                     if (castle[0]) {
                         if (state.at(new Pos(p.x() + 1, p.y())) == 0
                                 && state.at(new Pos(p.x() + 2, p.y())) == 0
-                                && state.isControlled(new Pos(p.x() + 1, p.y()), side.opp()) != null) {
+                                && state.isControlled(new Pos(p.x() + 1, p.y()), side.opp()) == null) {
                             moves.add(new Pos(p.x() + 2, p.y()));
                         }
+                    }
+                    if (castle[1]) {
                         if (state.at(new Pos(p.x() - 1, p.y())) == 0
                                 && state.at(new Pos(p.x() - 2, p.y())) == 0
                                 && state.at(new Pos(p.x() - 3, p.y())) == 0
-                                && state.isControlled(new Pos(p.x() - 1, p.y()), side.opp()) != null) {
+                                && state.isControlled(new Pos(p.x() - 1, p.y()), side.opp()) == null) {
                             moves.add(new Pos(p.x() - 2, p.y()));
                         }
                     }
@@ -571,20 +590,22 @@ public class Bot {
             }
             state.castle().set(side, new boolean[]{false, false});
             state.kings().set(side, to.clone());
+
         } else if (is(fromPiece, 'r')) {
             // cancel castling
             boolean[] castle = state.castle().get(side);
             if (castle[0] && from.equals(new Pos(7, isBlack(side) ? 7 : 0))) {
                 castle[0] = false;
-            } else if (castle[1] && from.equals(new Pos(7, isBlack(side) ? 7 : 0))) {
+            } else if (castle[1] && from.equals(new Pos(0, isBlack(side) ? 7 : 0))) {
                 castle[1] = false;
             }
+
         } else if (toPiece != 0 && is(toPiece, 'r')) {
             // cancel castling
             boolean[] castle = state.castle().get(side.opp());
-            if (castle[0] && from.equals(new Pos(7, isBlack(side) ? 0 : 7))) {
+            if (castle[0] && to.equals(new Pos(7, isBlack(side) ? 0 : 7))) {
                 castle[0] = false;
-            } else if (castle[1] && from.equals(new Pos(7, isBlack(side) ? 0 : 7))) {
+            } else if (castle[1] && to.equals(new Pos(0, isBlack(side) ? 0 : 7))) {
                 castle[1] = false;
             }
         }
@@ -635,5 +656,63 @@ public class Bot {
                     ", line=" + line +
                     '}';
         }
+    }
+
+    public static long[] testPerft(String fen, int min, int max) {
+        State originalState = setupState(fen);
+        long[] nodes = new long[max - min + 1];
+
+        int n = 0;
+        for (int i = min; i <= max; i++) {
+            State state = originalState.clone();
+//            long start = System.nanoTime();
+
+            long count = movesTest(state, i);
+
+//            double time = (System.nanoTime() - start) / 1000000.0;
+            nodes[n] = count;
+            n++;
+
+//            System.out.println("----- Depth " + i);
+//            System.out.println("Moves: " + count);
+//            System.out.println("Time: " + time);
+        }
+
+        return nodes;
+    }
+
+    private static long movesTest(State state, int depth) {
+        int logDepth = 3;
+
+        if (depth == 0) {
+            return 1;
+        }
+
+        HashMap<Pos, ArrayList<Pos>> moves = allValidMoves(state);
+        int num = 0;
+        for (Pos from : moves.keySet()) {
+            ArrayList<Pos> tos = moves.get(from);
+            for (Pos to : tos) {
+                State sim = simMove(state, from, to);
+
+                long c = movesTest(sim, depth - 1);
+
+                num += c;
+
+                if (LOG && depth == logDepth) {
+                    System.out.println(an(from) + an(to, state.at(from)) + ": " + c);
+                }
+            }
+        }
+
+        if (LOG && depth == logDepth) {
+            System.out.println("Total: " + num);
+        }
+
+        return num;
+    }
+
+    public static void test() {
+
     }
 }

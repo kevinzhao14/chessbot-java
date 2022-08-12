@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static com.example.demo.ai.Util.log;
+
 public class State {
     private final char[][] board;
     private Side turn;
@@ -160,8 +162,9 @@ public class State {
         if (isCheck != null) {
             if (isCheck.size() == 1) {
                 Pair<Pos, ArrayList<Pos>> check = isCheck.get(0);
-                check.b().add(0, check.a());
-                this.check = new Check(check.a(), check.b());
+                ArrayList<Pos> newList = new ArrayList<>(check.b());
+                newList.add(0, check.a());
+                this.check = new Check(check.a(), newList);
             } else {
                 this.check = new Check(kingPos, new ArrayList<>());
             }
@@ -217,6 +220,10 @@ public class State {
 
     public void pins(ArrayList<Pin> pins) {
         this.pins = pins;
+    }
+
+    public Group<HashMap<Pos, ArrayList<ArrayList<Pos>>>> control() {
+        return control;
     }
 
     @Override

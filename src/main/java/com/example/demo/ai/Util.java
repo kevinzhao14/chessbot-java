@@ -147,6 +147,8 @@ public class Util {
                 n += "1" + PROM[pos.y() * -1];
             } else if (pos.y() >= 7) {
                 n += "8" + PROM[pos.y() - 7];
+            } else {
+                n += (pos.y() + 1);
             }
         } else {
             n += (pos.y() + 1);
@@ -160,5 +162,17 @@ public class Util {
 
     static boolean isNumeric(String str) {
         return str.matches("\\d+");  //match a number with optional '-' and decimal.
+    }
+
+    static void log(Object... args) {
+        StringBuilder str = new StringBuilder();
+        for (Object o : args) {
+            if (o == null) {
+                str.append("null ");
+            } else {
+                str.append(o.toString()).append(" ");
+            }
+        }
+        System.out.println(str);
     }
 }
