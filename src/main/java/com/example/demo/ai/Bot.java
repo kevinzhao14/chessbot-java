@@ -156,8 +156,9 @@ public class Bot {
         HashMap<Integer, ArrayList<Integer>> valid = allValidMoves(state);
 
         ArrayList<Pair<Move, Integer>> validMoves = new ArrayList<>();
-        for (int from : valid.keySet()) {
-            ArrayList<Integer> tos = valid.get(from);
+        for (Map.Entry<Integer, ArrayList<Integer>> entry : valid.entrySet()) {
+            int from = entry.getKey();
+            ArrayList<Integer> tos = entry.getValue();
             for (int to : tos) {
                 char toPiece = state.at(to);
                 int score = 0;

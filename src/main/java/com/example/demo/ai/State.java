@@ -10,6 +10,7 @@ import com.example.demo.ai.objects.ValidMoves;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.example.demo.ai.Util.log;
 
@@ -67,9 +68,11 @@ public class State {
         HashMap<Integer, ArrayList<ArrayList<Integer>>> controlWhite = null;
         if (this.control.white() != null) {
             controlWhite = new HashMap<>();
-            for (int pos : this.control.white().keySet()) {
+            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.white().entrySet()) {
+                int pos = entry.getKey();
+                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
                 ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : this.control.white().get(pos)) {
+                for (ArrayList<Integer> path : currPaths) {
                     paths.add((ArrayList<Integer>) path.clone());
                 }
                 controlWhite.put(pos, paths);
@@ -79,9 +82,11 @@ public class State {
         HashMap<Integer, ArrayList<ArrayList<Integer>>> controlBlack = null;
         if (this.control.black() != null) {
             controlBlack = new HashMap<>();
-            for (int pos : this.control.black().keySet()) {
+            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.black().entrySet()) {
+                int pos = entry.getKey();
+                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
                 ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : this.control.black().get(pos)) {
+                for (ArrayList<Integer> path : currPaths) {
                     paths.add((ArrayList<Integer>) path.clone());
                 }
                 controlBlack.put(pos, paths);
@@ -121,8 +126,9 @@ public class State {
             return null;
         }
         ArrayList<Pair<Integer, ArrayList<Integer>>> pathList = new ArrayList<>();
-        for (int by : this.control.get(side).keySet()) {
-            ArrayList<ArrayList<Integer>> paths = this.control.get(side).get(by);
+        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.get(side).entrySet()) {
+            int by = entry.getKey();
+            ArrayList<ArrayList<Integer>> paths = entry.getValue();
             for (ArrayList<Integer> path : paths) {
                 for (int p : path) {
                     if (p == pos) {
@@ -150,10 +156,6 @@ public class State {
         }
         this.check = null;
         return false;
-    }
-
-    public char[] board() {
-        return board;
     }
 
     public Side turn() {
@@ -198,10 +200,6 @@ public class State {
 
     public void pins(ArrayList<Pin> pins) {
         this.pins = pins;
-    }
-
-    public Group<HashMap<Integer, ArrayList<ArrayList<Integer>>>> control() {
-        return control;
     }
 
     @Override
