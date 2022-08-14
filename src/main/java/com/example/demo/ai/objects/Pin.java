@@ -3,27 +3,23 @@ package com.example.demo.ai.objects;
 import java.util.ArrayList;
 
 public class Pin {
-    Pos pinPiece;
-    ArrayList<Pos> pinMoves;
+    int pinPiece;
+    ArrayList<Integer> pinMoves;
 
-    public Pin(Pos pinPiece, ArrayList<Pos> pinMoves) {
+    public Pin(int pinPiece, ArrayList<Integer> pinMoves) {
         this.pinPiece = pinPiece;
         this.pinMoves = pinMoves;
     }
 
     public Pin clone() {
-        ArrayList<Pos> newMoves = new ArrayList<>();
-        for (Pos p : this.pinMoves) {
-            newMoves.add(p.clone());
-        }
-        return new Pin(this.pinPiece.clone(), newMoves);
+        return new Pin(this.pinPiece, (ArrayList<Integer>) this.pinMoves.clone());
     }
 
-    public Pos pinPiece() {
+    public int pinPiece() {
         return pinPiece;
     }
 
-    public ArrayList<Pos> pinMoves() {
+    public ArrayList<Integer> pinMoves() {
         return pinMoves;
     }
 }

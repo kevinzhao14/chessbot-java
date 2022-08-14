@@ -3,25 +3,25 @@ package com.example.demo.ai.objects;
 import java.util.ArrayList;
 
 public class ValidMoves {
-    ArrayList<Pos> moves;
+    ArrayList<Integer> moves;
     ArrayList<Pin> pins;
-    ArrayList<ArrayList<Pos>> control;
+    ArrayList<ArrayList<Integer>> control;
 
-    public ValidMoves(ArrayList<Pos> moves) {
+    public ValidMoves(ArrayList<Integer> moves) {
         this.moves = moves;
         this.control = null;
     }
 
-    public ValidMoves(ArrayList<ArrayList<Pos>> control, ArrayList<Pin> pins) {
+    public ValidMoves(ArrayList<ArrayList<Integer>> control, ArrayList<Pin> pins) {
         this.control = control;
         this.pins = pins;
     }
 
-    public ArrayList<ArrayList<Pos>> control() {
+    public ArrayList<ArrayList<Integer>> control() {
         return control;
     }
 
-    public ArrayList<Pos> moves() {
+    public ArrayList<Integer> moves() {
         return moves;
     }
 

@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.ai.Bot;
+import com.example.demo.ai.Util;
 import com.example.demo.ai.objects.BestMove;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -140,6 +141,7 @@ public class BotTest {
             System.out.println("----- " + "Running Perf Test " + perft.id + " -----");
             long[] res = Bot.testPerft(perft.fen, 1, perft.nodes.length);
 
+            Util.log("res", res[0], res[1], res[2]);
             for (int i = 0; i < perft.nodes.length; i++) {
                 System.out.println("Depth " + (i + 1) + ":");
                 Assertions.assertThat(res[i]).isEqualTo(perft.nodes[i]);
@@ -150,9 +152,9 @@ public class BotTest {
 
     @Test
     void testSinglePerft() {
-        String fen = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+        String fen = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 
-        Bot.testPerft(fen, 3, 3);
+        Bot.testPerft(fen, 2, 2);
     }
 
     @Test
