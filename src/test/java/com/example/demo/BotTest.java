@@ -70,10 +70,12 @@ public class BotTest {
                 BestMove results = Bot.getMove(test, true);
 
                 double perf = (System.nanoTime() - start) / 1000000.0;
+                long nodes = results.getNodes();
+
                 eachTimes.add(perf);
-                eachNodes.add(results.getNodes());
+                eachNodes.add(nodes);
                 totalTime += perf;
-                totalNodes += results.getNodes();
+                totalNodes += nodes;
                 tested++;
             }
         }

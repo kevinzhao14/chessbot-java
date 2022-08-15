@@ -14,10 +14,6 @@ public class Move {
         this.line = line;
     }
 
-    public Move(int from, int to) {
-        this(from, to, null);
-    }
-
     public Move(int from, int to, int score) {
         this(from, to, null);
         this.score = score;

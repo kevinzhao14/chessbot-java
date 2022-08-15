@@ -57,9 +57,9 @@ public class Bot {
 //            System.out.println("Extra depth: " + DEPTH);
 //        }
 
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         MoveInfo best = bestMove(state);
-        long total = System.currentTimeMillis() - start;
+        double total = (System.nanoTime() - start) / 1000000.0;
 
 //        if (EXTRA_DEPTH) {
 //            DEPTH -= extraDepth;
@@ -394,20 +394,18 @@ public class Bot {
             case 'p':
                 int dir = isBlack(side) ? -8 : 8;
                 int single = p + dir;
-                if (!getControl) {
-                    if (state.at(single) == 0) {
-                        moves.add(single);
-                        // check for promotion
-                        if (isBlack(side) ? (single <= 7) : (single >= 56)) {
-                            for (int i = 1; i < 4; i++) {
-                                moves.add(single + dir * i);
-                            }
-                        } else {
-                            if (isBlack(side) ? (p >= 48) : (p <= 15)) {
-                                int doub = single + dir;
-                                if (state.at(doub) == 0) {
-                                    moves.add(doub);
-                                }
+                if (!getControl && state.at(single) == 0) {
+                    moves.add(single);
+                    // check for promotion
+                    if (isBlack(side) ? (single <= 7) : (single >= 56)) {
+                        for (int i = 1; i < 4; i++) {
+                            moves.add(single + dir * i);
+                        }
+                    } else {
+                        if (isBlack(side) ? (p >= 48) : (p <= 15)) {
+                            int doub = single + dir;
+                            if (state.at(doub) == 0) {
+                                moves.add(doub);
                             }
                         }
                     }
@@ -481,20 +479,16 @@ public class Bot {
                 // castling
                 if (!getControl && state.isControlled(p, side.opp()) == null) {
                     boolean[] castle = state.castle().get(side);
-                    if (castle[0]) {
-                        if (state.at(p + 1) == 0
-                                && state.at(p + 2) == 0
-                                && state.isControlled(p + 1, side.opp()) == null) {
-                            moves.add(p + 2);
-                        }
+                    if (castle[0] && state.at(p + 1) == 0
+                    && state.at(p + 2) == 0
+                    && state.isControlled(p + 1, side.opp()) == null) {
+                        moves.add(p + 2);
                     }
-                    if (castle[1]) {
-                        if (state.at(p - 1) == 0
-                                && state.at(p - 2) == 0
-                                && state.at(p - 3) == 0
-                                && state.isControlled(p - 1, side.opp()) == null) {
-                            moves.add(p - 2);
-                        }
+                    if (castle[1] && state.at(p - 1) == 0
+                    && state.at(p - 2) == 0
+                    && state.at(p - 3) == 0
+                    && state.isControlled(p - 1, side.opp()) == null) {
+                        moves.add(p - 2);
                     }
                 }
                 break;
@@ -615,7 +609,6 @@ public class Bot {
             }
         }
 
-        if (to < 0) log("to", to, state.at(from), fromPiece);
         state.set(to, fromPiece);
         state.remove(from);
 
