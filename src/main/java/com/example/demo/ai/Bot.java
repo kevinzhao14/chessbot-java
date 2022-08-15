@@ -171,6 +171,7 @@ public class Bot {
         validMoves.sort((o1, o2) -> o2.b() - o1.b());
 
         ArrayList<Pair<Move, LinkedList<Move>>> best = new ArrayList<>();
+        boolean useBeta = false;
         double bestScore = 0;
 
         for (Pair<Move, Integer> movePair : validMoves) {
@@ -185,7 +186,6 @@ public class Bot {
             LinkedList<Move> line = new LinkedList<>();
 
             if (simState.won() == Side.NONE) {
-                boolean useBeta = best.size() != 0;
                 double beta = (bestScore - score) / MULT;
                 MoveInfo childBest = bestMove(simState, depth - 1, useBeta, beta);
                 if (childBest.move != null) {
@@ -199,6 +199,7 @@ public class Bot {
 
             if (best.size() == 0 || (isBlack(state.turn()) ? score <= bestScore : score >= bestScore)) {
                 if (score != bestScore) {
+                    useBeta = true;
                     bestScore = score;
                     best.clear();
                 }
