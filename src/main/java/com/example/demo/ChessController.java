@@ -21,6 +21,13 @@ public class ChessController {
     }
 
     @CrossOrigin
+    @GetMapping("/getEval")
+    public HttpEntity<? extends Object> getEval(@RequestParam("fen") String fen) {
+        double result = Bot.getEval(fen);
+        return ResponseEntity.ok().body(result);
+    }
+
+    @CrossOrigin
     @GetMapping("/getMovePath/{fen}")
     public HttpEntity<? extends Object> getMovePath(@PathVariable String fen) {
         System.out.println("path " + fen);

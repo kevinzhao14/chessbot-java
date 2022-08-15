@@ -10,6 +10,7 @@ import com.example.demo.ai.objects.Side;
 import com.example.demo.ai.objects.ValidMoves;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -37,7 +38,7 @@ public class Bot {
         State state = setupState(fen);
         if (LOG) {
             Util.printBoard(state, true);
-            System.out.println(getValidMoves('P', new Pos(7, 1), state));
+            System.out.println(allValidMoves(state));
         }
 
 
@@ -45,10 +46,25 @@ public class Bot {
 //        return new BestMove(null, null, '\0'); /*
 
         // TODO: extraDepth
+        int c = 0;
+        for (char[] row : state.board()) {
+            for (char p : row) {
+                if (p != 0) c++;
+            }
+        }
+        int extraDepth = (int) Math.floor((32 - c) / 22.0) * 2;
+        if (EXTRA_DEPTH && extraDepth > 0) {
+            DEPTH += extraDepth;
+            System.out.println("Extra depth: " + DEPTH);
+        }
 
         long start = System.currentTimeMillis();
         MoveInfo best = bestMove(state);
         long total = System.currentTimeMillis() - start;
+
+        if (EXTRA_DEPTH) {
+            DEPTH -= extraDepth;
+        }
 
         Pos from = null;
         Pos to = null;
@@ -76,6 +92,8 @@ public class Bot {
         res.setTo(to);
 
         System.out.println("\nMove: " + from + " -> " + to);
+
+        best.score /= MULT == 1 ? 1.0 : ((MULT - Math.pow(MULT, DEPTH)) / (1.0 - MULT));
         System.out.println("Score: " + Math.round(best.score * 1000) / 1000);
 
         StringBuilder line = new StringBuilder("Line: ");
@@ -99,6 +117,19 @@ public class Bot {
 
     public static BestMove getMove(String fen) {
         return getMove(fen, false);
+    }
+
+    public static double getEval(String fen) {
+        State state = setupState(fen);
+        MoveInfo best = bestMove(state);
+
+        double mod = MULT == 1 ? DEPTH : ((1 - Math.pow(MULT, DEPTH)) / (1 - MULT));
+        double score = best.score / mod;
+        if (LOG) {
+            log(best.score, score, mod);
+        }
+
+        return score;
     }
 
     public static State setupState(String fen) {
@@ -195,10 +226,12 @@ public class Bot {
                 boolean useBeta = best.size() != 0;
                 double beta = (bestScore - score) / MULT;
                 MoveInfo childBest = bestMove(simState, depth - 1, useBeta, beta);
+
                 if (childBest.move != null) {
                     line.addAll(0, childBest.line);
                     line.add(0, childBest.move);
                 }
+
                 score += MULT * childBest.score;
             } else {
                 score *= 1 + (double) depth / DEPTH;
