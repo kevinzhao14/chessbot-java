@@ -154,10 +154,10 @@ public class BotTest {
 
     @Test
     void testSinglePerft() {
-//        String fen = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
-        String fen = perfts[3].fen;
+        String fen = "Q1r1k2r/1ppp1ppp/1b3nbN/nPB5/B1P1P3/q4N2/Pp1P2PP/R2Q1RK1 b k - 0 2";
+//        String fen = perfts[2].fen;
 
-        Bot.testPerft(fen, 1, 4);
+        Bot.testPerft(fen, 1, 1);
     }
 
     @Test

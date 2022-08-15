@@ -184,4 +184,31 @@ public class Util {
         }
         System.out.println(str);
     }
+
+    static long bit(long pos) {
+        return 1L << (pos - ((pos % 8) * 2 - 7));
+    }
+
+    static boolean bitmapHas(long bitmap, long has) {
+        return (bitmap & has) != 0;
+    }
+
+    static long bitmapAdd(long bitmap, long bit) {
+        return bitmap | bit;
+    }
+
+    static void printBitmap(long map) {
+        StringBuilder str = new StringBuilder();
+        long mask = 1;
+        int count = 0;
+        while (count < 64) {
+            str.insert(0, ((map & mask) >> count) + " ");
+            if (count % 8 == 7) {
+                str.insert(0, "\n");
+            }
+            count++;
+            mask = mask << 1;
+        }
+        System.out.println(str);
+    }
 }

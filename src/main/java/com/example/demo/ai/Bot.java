@@ -15,6 +15,9 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import static com.example.demo.ai.Util.an;
+import static com.example.demo.ai.Util.bit;
+import static com.example.demo.ai.Util.bitmapAdd;
+import static com.example.demo.ai.Util.bitmapHas;
 import static com.example.demo.ai.Util.is;
 import static com.example.demo.ai.Util.isBlack;
 import static com.example.demo.ai.Util.log;
@@ -325,10 +328,10 @@ public class Bot {
                     int pinPiece = -1;
                     boolean pin = false;
                     boolean kingPin = false;
-                    ArrayList<Integer> pinMoves = new ArrayList<>();
+                    long pinMoves = 0;
                     ArrayList<Integer> path = new ArrayList<>();
 
-                    pinMoves.add(p);
+                    pinMoves = bitmapAdd(pinMoves, bit(p));
 
                     int pos = Util.go(p, i);
                     while (!Util.offBoard(pos)) {
@@ -367,7 +370,7 @@ public class Bot {
                         }
 
                         if (!kingPin) {
-                            pinMoves.add(pos);
+                            pinMoves = bitmapAdd(pinMoves, bit(pos));
                         }
                         if (!pin) {
                             if (getControl) {
@@ -513,7 +516,7 @@ public class Bot {
                 inCheck = true;
             }
 
-            ArrayList<Integer> pinMoves = null;
+            long pinMoves = 0;
             for (Pin pin : state.pins()) {
                 if (pin.pinPiece() == p) {
                     pinMoves = pin.pinMoves();
@@ -524,7 +527,7 @@ public class Bot {
             boolean isKing = is(piece, 'k');
             for (int i = 0; i < moves.size(); i++) {
                 int move = moves.get(i);
-                if (pinMoves != null && !pinMoves.contains(move)) {
+                if (pinMoves != 0 && !bitmapHas(pinMoves, bit(move))) {
                     moves.remove(i);
                     i--;
 
@@ -658,8 +661,16 @@ public class Bot {
     }
 
     public static long[] testPerft(String fen, int min, int max) {
+        if (min == max) {
+            LOG = true;
+        }
+
         State originalState = setupState(fen);
         long[] nodes = new long[max - min + 1];
+
+        if (LOG) {
+            log("pins", originalState.pins());
+        }
 
         int n = 0;
         for (int i = min; i <= max; i++) {
