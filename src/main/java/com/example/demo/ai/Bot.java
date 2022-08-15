@@ -5,14 +5,15 @@ import com.example.demo.ai.objects.Check;
 import com.example.demo.ai.objects.Move;
 import com.example.demo.ai.objects.Pair;
 import com.example.demo.ai.objects.Pin;
-import com.example.demo.ai.objects.Pos;
 import com.example.demo.ai.objects.Side;
+import com.example.demo.ai.objects.Static;
 import com.example.demo.ai.objects.ValidMoves;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 import static com.example.demo.ai.Util.an;
 import static com.example.demo.ai.Util.is;
@@ -30,7 +31,7 @@ public class Bot {
 
     static boolean LOG = false;
 
-    static boolean EXTRA_DEPTH = true;
+    static boolean EXTRA_DEPTH = false;
 
     private static int nodes = 0;
 
@@ -38,50 +39,50 @@ public class Bot {
         State state = setupState(fen);
         if (LOG) {
             Util.printBoard(state, true);
-            System.out.println(allValidMoves(state));
+//            System.out.println(getValidMoves('P', 12, state));
         }
-
 
 
 //        return new BestMove(null, null, '\0'); /*
 
         // TODO: extraDepth
-        int c = 0;
-        for (char[] row : state.board()) {
-            for (char p : row) {
-                if (p != 0) c++;
-            }
-        }
-        int extraDepth = (int) Math.floor((32 - c) / 22.0) * 2;
-        if (EXTRA_DEPTH && extraDepth > 0) {
-            DEPTH += extraDepth;
-            System.out.println("Extra depth: " + DEPTH);
-        }
+//        int c = 0;
+//        for (char[] row : state.board()) {
+//            for (char p : row) {
+//                if (p != 0) c++;
+//            }
+//        }
+//        int extraDepth = (int) Math.floor((32 - c) / 22.0) * 2;
+//        if (EXTRA_DEPTH && extraDepth > 0) {
+//            DEPTH += extraDepth;
+//            System.out.println("Extra depth: " + DEPTH);
+//        }
 
         long start = System.currentTimeMillis();
         MoveInfo best = bestMove(state);
         long total = System.currentTimeMillis() - start;
 
-        if (EXTRA_DEPTH) {
-            DEPTH -= extraDepth;
-        }
+//        if (EXTRA_DEPTH) {
+//            DEPTH -= extraDepth;
+//        }
 
-        Pos from = null;
-        Pos to = null;
+        int from = -1;
+        int to = -1;
 
-        BestMove res = new BestMove(null, null, '\0');
+        BestMove res = new BestMove(-1, -1, '\0');
 
         if (best.move != null) {
             from = best.move.from();
             to = best.move.to();
 
             if (is(state.at(from), 'p')) {
-                if (to.y() <= 0) {
-                    res.setPromote(Util.PROM[to.y() * -1]);
-                    to.setY(0);
-                } else if (to.y() >= 7) {
-                    res.setPromote(Util.PROM[to.y() - 7]);
-                    to.setY(7);
+                int r = (int) Math.floor(from / 8.0);
+                if (r <= 0) {
+                    res.setPromote(Util.PROM[r * -1]);
+                    to -= r * 8;
+                } else if (r >= 7) {
+                    res.setPromote(Util.PROM[r - 7]);
+                    to = 56 + to % 8;
                 }
             }
 
@@ -154,9 +155,10 @@ public class Bot {
                 if (Util.isNumeric(item)) {
                     c += Integer.parseInt(item);
                 } else {
-                    state.set(new Pos(c, r), itm);
+                    int pos = r * 8 + c;
+                    state.set(pos, itm);
                     if (is(itm, 'k')) {
-                        state.kings().set(sideOf(itm), new Pos(c, r));
+                        state.kings().set(sideOf(itm), pos);
                     }
                     c++;
                 }
@@ -192,12 +194,13 @@ public class Bot {
         if (depth == 0) {
             return new MoveInfo(null, 0, new LinkedList<>());
         }
-        HashMap<Pos, ArrayList<Pos>> valid = allValidMoves(state);
+        HashMap<Integer, ArrayList<Integer>> valid = allValidMoves(state);
 
         ArrayList<Pair<Move, Integer>> validMoves = new ArrayList<>();
-        for (Pos from : valid.keySet()) {
-            ArrayList<Pos> tos = valid.get(from);
-            for (Pos to : tos) {
+        for (Map.Entry<Integer, ArrayList<Integer>> entry : valid.entrySet()) {
+            int from = entry.getKey();
+            ArrayList<Integer> tos = entry.getValue();
+            for (int to : tos) {
                 char toPiece = state.at(to);
                 int score = 0;
                 if (toPiece != 0) {
@@ -209,12 +212,13 @@ public class Bot {
         validMoves.sort((o1, o2) -> o2.b() - o1.b());
 
         ArrayList<Pair<Move, LinkedList<Move>>> best = new ArrayList<>();
+        boolean useBeta = false;
         double bestScore = 0;
 
         for (Pair<Move, Integer> movePair : validMoves) {
             Move move = movePair.a();
-            Pos from = move.from();
-            Pos to = move.to();
+            int from = move.from();
+            int to = move.to();
 
             nodes++;
 
@@ -223,7 +227,6 @@ public class Bot {
             LinkedList<Move> line = new LinkedList<>();
 
             if (simState.won() == Side.NONE) {
-                boolean useBeta = best.size() != 0;
                 double beta = (bestScore - score) / MULT;
                 MoveInfo childBest = bestMove(simState, depth - 1, useBeta, beta);
 
@@ -239,6 +242,7 @@ public class Bot {
 
             if (best.size() == 0 || (isBlack(state.turn()) ? score <= bestScore : score >= bestScore)) {
                 if (score != bestScore) {
+                    useBeta = true;
                     bestScore = score;
                     best.clear();
                 }
@@ -272,26 +276,19 @@ public class Bot {
         return bestMove(state, DEPTH, false, 0.0);
     }
 
-    private static HashMap<Pos, ArrayList<Pos>> allValidMoves(State state) {
+    private static HashMap<Integer, ArrayList<Integer>> allValidMoves(State state) {
         Side turn = state.turn();
-        HashMap<Pos, ArrayList<Pos>> moves = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> moves = new HashMap<>();
 
         if (state.won() != Side.NONE) {
             return moves;
         }
 
-        for (int i = 0; i < 8; i++) {
-            char[] row = state.board()[i];
-            for (int j = 0; j < 8; j++) {
-                char piece = row[j];
-                if (piece != 0) {
-                    Pos pos = new Pos(j, i);
-                    if (sideOf(piece) != turn) {
-                        continue;
-                    }
-                    ValidMoves m = getValidMoves(piece, pos, state);
-                    moves.put(pos, m.moves());
-                }
+        for (int i = 0; i < 64; i++) {
+            char piece = state.at(i);
+            if (piece != 0 && sideOf(piece) == turn) {
+                ValidMoves m = getValidMoves(piece, i, state);
+                moves.put(i, m.moves());
             }
         }
 
@@ -305,16 +302,12 @@ public class Bot {
             return false;
         }
 
-        for (int i = 0; i < 8; i++) {
-            char[] row = state.board()[i];
-            for (int j = 0; j < 8; j++) {
-                char piece = row[j];
-                if (piece != 0 && sideOf(piece) == turn) {
-                    Pos pos = new Pos(j, i);
-                    ValidMoves m = getValidMoves(piece, pos, state);
-                    if (m.moves().size() > 0) {
-                        return true;
-                    }
+        for (int i = 0; i < 64; i++) {
+            char piece = state.at(i);
+            if (piece != 0 && sideOf(piece) == turn) {
+                ValidMoves m = getValidMoves(piece, i, state);
+                if (m.moves().size() > 0) {
+                    return true;
                 }
             }
         }
@@ -322,25 +315,24 @@ public class Bot {
         return false;
     }
 
-    static ValidMoves getValidMoves(char piece, Pos p, State state, boolean getControl) {
+    static ValidMoves getValidMoves(char piece, int p, State state, boolean getControl) {
         Side side = sideOf(piece);
-        ArrayList<Pos> moves = new ArrayList<>();
-        ArrayList<ArrayList<Pos>> control = new ArrayList<>();
+        ArrayList<Integer> moves = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> control = new ArrayList<>();
         ArrayList<Pin> pins = new ArrayList<>();
-        ArrayList<Pos> temp = new ArrayList<>();
 
         class Pather {
-            void go(Pos p, int from, int to) {
+            void go(int p, int from, int to) {
                 for (int i = from; i < to; i++) {
-                    Pos pinPiece = null;
+                    int pinPiece = -1;
                     boolean pin = false;
                     boolean kingPin = false;
-                    ArrayList<Pos> pinMoves = new ArrayList<>();
-                    ArrayList<Pos> path = new ArrayList<>();
+                    ArrayList<Integer> pinMoves = new ArrayList<>();
+                    ArrayList<Integer> path = new ArrayList<>();
 
-                    pinMoves.add(p.clone());
+                    pinMoves.add(p);
 
-                    Pos pos = Util.go(p, i);
+                    int pos = Util.go(p, i);
                     while (!Util.offBoard(pos)) {
 //                    if (getControl && p.equals(new Pos(4, 1))) log("p", i, pos, path, control);
                         char ap = state.at(pos);
@@ -393,8 +385,7 @@ public class Bot {
                     if (getControl) {
                         control.add(path);
                         if (kingPin) {
-                            new Pather().go(pos.clone(), i, i + 1);
-//                            log("pather", p, control);
+                            new Pather().go(pos, i, i + 1);
                         }
                     }
                 }
@@ -403,19 +394,19 @@ public class Bot {
 
         switch (Character.toLowerCase((piece))) {
             case 'p':
-                int dir = isBlack(side) ? -1 : 1;
-                Pos single = new Pos(p.x(), p.y() + dir);
+                int dir = isBlack(side) ? -8 : 8;
+                int single = p + dir;
                 if (!getControl) {
                     if (state.at(single) == 0) {
                         moves.add(single);
                         // check for promotion
-                        if (single.y() == (isBlack(side) ? 0 : 7)) {
+                        if (isBlack(side) ? (single <= 7) : (single >= 56)) {
                             for (int i = 1; i < 4; i++) {
-                                moves.add(new Pos(single.x(), single.y() + dir * i));
+                                moves.add(single + dir * i);
                             }
                         } else {
-                            if (p.y() == (isBlack(side) ? 6 : 1)) {
-                                Pos doub = new Pos(single.x(), single.y() + dir);
+                            if (isBlack(side) ? (p >= 48) : (p <= 15)) {
+                                int doub = single + dir;
                                 if (state.at(doub) == 0) {
                                     moves.add(doub);
                                 }
@@ -424,37 +415,36 @@ public class Bot {
                     }
                 }
 
-                Pos[] tpos = new Pos[2];
-                if (p.x() - 1 >= 0) {
-                    tpos[0] = new Pos(p.x() - 1, single.y());
+                int[] tpos = new int[]{-1, -1};
+                int c = p % 8;
+                if (c >= 1) {
+                    tpos[0] = single - 1;
                 }
-                if (p.x() + 1 <= 7) {
-                    tpos[1] = new Pos(p.x() + 1, single.y());
+                if (c <= 6) {
+                    tpos[1] = single + 1;
                 }
 
-                for (Pos tp : tpos) {
-                    if (tp == null) {
+                for (int tp : tpos) {
+                    if (tp == -1) {
                         continue;
                     }
                     char take = state.at(tp);
                     if (getControl) {
-                        ArrayList<Pos> list = new ArrayList<>();
-                        list.add(tp);
-                        control.add(list);
-                    } else if (state.enPassant() != null && tp.equals(state.enPassant())) {
+                        control.add(new ArrayList<>(Collections.singletonList(tp)));
+                    } else if (state.enPassant() != -1 && tp == state.enPassant()) {
                         State sim = state.clone();
                         sim.set(tp, sim.at(p));
                         sim.remove(p);
-                        sim.remove(new Pos(tp.x(), p.y()));
+                        sim.remove(tp - dir);
                         sim.calcControls(side.opp());
                         if (sim.isControlled(sim.kings().get(side), side.opp()) == null) {
                             moves.add(tp);
                         }
                     } else if (take != 0 && sideOf(take) != side) {
                         moves.add(tp);
-                        if (single.y() == (isBlack(side) ? 0 : 7)) {
+                        if (isBlack(side) ? (tp <= 7) : (tp >= 56)) {
                             for (int i = 1; i < 4; i++) {
-                                moves.add(new Pos(tp.x(), tp.y() + dir * i));
+                                moves.add(tp + dir * i);
                             }
                         }
                     }
@@ -462,20 +452,12 @@ public class Bot {
                 break;
 
             case 'n':
-                temp.add(new Pos(p.x() + 2, p.y() + 1));
-                temp.add(new Pos(p.x() + 2, p.y() - 1));
-                temp.add(new Pos(p.x() - 2, p.y() + 1));
-                temp.add(new Pos(p.x() - 2, p.y() - 1));
-                temp.add(new Pos(p.x() + 1, p.y() + 2));
-                temp.add(new Pos(p.x() + 1, p.y() - 2));
-                temp.add(new Pos(p.x() - 1, p.y() + 2));
-                temp.add(new Pos(p.x() - 1, p.y() - 2));
-                for (Pos pos : temp) {
+                for (int pos : Static.N[p]) {
                     if (offBoard(pos)) {
                         continue;
                     }
                     if (getControl) {
-                        ArrayList<Pos> list = new ArrayList<>();
+                        ArrayList<Integer> list = new ArrayList<>();
                         list.add(pos);
                         control.add(list);
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
@@ -485,22 +467,12 @@ public class Bot {
                 break;
 
             case 'k':
-                int x1 = p.x() + 1, x2 = p.x() - 1;
-                int y1 = p.y() + 1, y2 = p.y() - 1;
-                temp.add(new Pos(x1, y1));
-                temp.add(new Pos(x1, y2));
-                temp.add(new Pos(x2, y1));
-                temp.add(new Pos(x2, y2));
-                temp.add(new Pos(x1, p.y()));
-                temp.add(new Pos(x2, p.y()));
-                temp.add(new Pos(p.x(), y1));
-                temp.add(new Pos(p.x(), y2));
-                for (Pos pos : temp) {
+                for (int pos : Static.K[p]) {
                     if (offBoard(pos)) {
                         continue;
                     }
                     if (getControl) {
-                        ArrayList<Pos> list = new ArrayList<>();
+                        ArrayList<Integer> list = new ArrayList<>();
                         list.add(pos);
                         control.add(list);
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
@@ -512,18 +484,18 @@ public class Bot {
                 if (!getControl && state.isControlled(p, side.opp()) == null) {
                     boolean[] castle = state.castle().get(side);
                     if (castle[0]) {
-                        if (state.at(new Pos(p.x() + 1, p.y())) == 0
-                                && state.at(new Pos(p.x() + 2, p.y())) == 0
-                                && state.isControlled(new Pos(p.x() + 1, p.y()), side.opp()) == null) {
-                            moves.add(new Pos(p.x() + 2, p.y()));
+                        if (state.at(p + 1) == 0
+                                && state.at(p + 2) == 0
+                                && state.isControlled(p + 1, side.opp()) == null) {
+                            moves.add(p + 2);
                         }
                     }
                     if (castle[1]) {
-                        if (state.at(new Pos(p.x() - 1, p.y())) == 0
-                                && state.at(new Pos(p.x() - 2, p.y())) == 0
-                                && state.at(new Pos(p.x() - 3, p.y())) == 0
-                                && state.isControlled(new Pos(p.x() - 1, p.y()), side.opp()) == null) {
-                            moves.add(new Pos(p.x() - 2, p.y()));
+                        if (state.at(p - 1) == 0
+                                && state.at(p - 2) == 0
+                                && state.at(p - 3) == 0
+                                && state.isControlled(p - 1, side.opp()) == null) {
+                            moves.add(p - 2);
                         }
                     }
                 }
@@ -543,15 +515,15 @@ public class Bot {
         if (!getControl) {
             Check check = state.check();
             boolean inCheck = false;
-            ArrayList<Pos> checkMoves = new ArrayList<>();
+            ArrayList<Integer> checkMoves = new ArrayList<>();
             if (check != null) {
                 checkMoves = check.path();
                 inCheck = true;
             }
 
-            ArrayList<Pos> pinMoves = null;
+            ArrayList<Integer> pinMoves = null;
             for (Pin pin : state.pins()) {
-                if (pin.pinPiece().equals(p)) {
+                if (pin.pinPiece() == p) {
                     pinMoves = pin.pinMoves();
                     break;
                 }
@@ -559,17 +531,17 @@ public class Bot {
 
             boolean isKing = is(piece, 'k');
             for (int i = 0; i < moves.size(); i++) {
-                Pos move = moves.get(i);
+                int move = moves.get(i);
                 if (pinMoves != null && !pinMoves.contains(move)) {
                     moves.remove(i);
                     i--;
 
-                    // king moving to a controlled square
                 } else {
-                    if (state.enPassant() != null && is(piece, 'p') && move.equals(state.enPassant())) {
+                    if (state.enPassant() != -1 && is(piece, 'p') && move == state.enPassant()) {
                         continue;
                     }
 
+                    // king moving to a controlled square
                     if ((isKing && state.isControlled(move, side.opp()) != null)
                             || (!isKing && inCheck && !checkMoves.contains(move))) {
                         moves.remove(i);
@@ -586,11 +558,11 @@ public class Bot {
         }
     }
 
-    static ValidMoves getValidMoves(char piece, Pos p, State state) {
+    static ValidMoves getValidMoves(char piece, int p, State state) {
         return getValidMoves(piece, p, state, false);
     }
 
-    private static State simMove(State state, Pos from, Pos to) {
+    private static State simMove(State state, int from, int to) {
         state = state.clone();
 
         char fromPiece = state.at(from);
@@ -599,58 +571,61 @@ public class Bot {
 
         if (is(fromPiece, 'p')) {
             // promotion
-            if (isBlack(side) && to.y() <= 0) {
-                fromPiece = Util.PROM[to.y() * -1];
-                to = new Pos(to.x(), 0);
-            } else if (!isBlack(side) && to.y() >= 7) {
-                fromPiece = Character.toUpperCase(Util.PROM[to.y() - 7]);
-                to = new Pos(to.x(), 7);
+            int r = (int) Math.floor(to / 8.0);
+            if (isBlack(side) && r <= 0) {
+                fromPiece = Util.PROM[r * -1];
+                to -= r * 8;
+            } else if (!isBlack(side) && r >= 7) {
+                fromPiece = Character.toUpperCase(Util.PROM[r - 7]);
+                to = 56 + to % 8;
             }
 
             // en passant
-            if (state.enPassant() != null && to.equals(state.enPassant())) {
-                state.remove(new Pos(to.x(), isBlack(side) ? 3 : 4));
+            if (state.enPassant() != -1 && to == state.enPassant()) {
+                state.remove(isBlack(side) ? (to + 8) : (to - 8));
             }
         } else if (is(fromPiece, 'k')) {
             // castling
-            if (Math.abs(from.x() - to.x()) == 2) {
-                boolean kingSide = from.x() < to.x();
-                Pos rookPos = new Pos(kingSide ? 7 : 0, from.y());
-                Pos newRookPos = new Pos(kingSide ? 5 : 3, from.y());
+            if (Math.abs(from - to) == 2) {
+                boolean kingSide = from < to;
+                int y = isBlack(side) ? 56 : 0;
+                int rookPos = y + (kingSide ? 7 : 0);
+                int newRookPos = y + (kingSide ? 5 : 3);
 
                 state.set(newRookPos, isBlack(side) ? 'r' : 'R');
                 state.remove(rookPos);
             }
             state.castle().set(side, new boolean[]{false, false});
-            state.kings().set(side, to.clone());
+            state.kings().set(side, to);
 
         } else if (is(fromPiece, 'r')) {
             // cancel castling
             boolean[] castle = state.castle().get(side);
-            if (castle[0] && from.equals(new Pos(7, isBlack(side) ? 7 : 0))) {
+            if (castle[0] && from == (isBlack(side) ? 63 : 7)) {
                 castle[0] = false;
-            } else if (castle[1] && from.equals(new Pos(0, isBlack(side) ? 7 : 0))) {
+            } else if (castle[1] && from == (isBlack(side) ? 56 : 0)) {
                 castle[1] = false;
             }
 
         } else if (toPiece != 0 && is(toPiece, 'r')) {
             // cancel castling
             boolean[] castle = state.castle().get(side.opp());
-            if (castle[0] && to.equals(new Pos(7, isBlack(side) ? 0 : 7))) {
+            if (castle[0] && to == (isBlack(side) ? 7 : 63)) {
                 castle[0] = false;
-            } else if (castle[1] && to.equals(new Pos(0, isBlack(side) ? 0 : 7))) {
+            } else if (castle[1] && to == (isBlack(side) ? 0 : 56)) {
                 castle[1] = false;
             }
         }
 
+        if (to < 0) log("to", to, state.at(from), fromPiece);
         state.set(to, fromPiece);
         state.remove(from);
 
         // set up the next en passant
-        if (is(fromPiece, 'p') && Math.abs(to.y() - from.y()) == 2) {
-            state.enPassant(new Pos(to.x(), isBlack(side) ? 5 : 2));
+        if (is(fromPiece, 'p') && Math.abs(to - from) == 16) {
+            state.enPassant(to + (isBlack(side) ? 8 : -8));
         } else {
-            state.enPassant(null);
+            state.enPassant(-1);
         }
 
         state.turn(state.turn().opp());
@@ -715,17 +690,20 @@ public class Bot {
     }
 
     private static long movesTest(State state, int depth) {
-        int logDepth = 3;
+        int logDepth = 1;
 
         if (depth == 0) {
             return 1;
         }
 
-        HashMap<Pos, ArrayList<Pos>> moves = allValidMoves(state);
+        HashMap<Integer, ArrayList<Integer>> moves = allValidMoves(state);
         int num = 0;
-        for (Pos from : moves.keySet()) {
-            ArrayList<Pos> tos = moves.get(from);
-            for (Pos to : tos) {
+        if (LOG && depth == logDepth) {
+            log("moves", moves);
+        }
+        for (int from : moves.keySet()) {
+            ArrayList<Integer> tos = moves.get(from);
+            for (int to : tos) {
                 State sim = simMove(state, from, to);
 
                 long c = movesTest(sim, depth - 1);

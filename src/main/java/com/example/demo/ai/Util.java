@@ -1,7 +1,6 @@
 package com.example.demo.ai;
 
 import com.example.demo.ai.objects.Dir;
-import com.example.demo.ai.objects.Pos;
 import com.example.demo.ai.objects.Side;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,15 +27,13 @@ public class Util {
             prepend = true;
         }
 
-        char[][] board = state.board();
         StringBuilder str = new StringBuilder(prepend ? nldelim : "");
         for (int i = 7; i >= 0; i--) {
-            char[] row = board[i];
             str.append(prepend ? delim : "");
             for (int j = 0; j < 8; j++) {
-                char op = isEmpty(row[j]) ? empty : row[j];
+                int pos = i * 8 + j;
+                char op = isEmpty(state.at(pos)) ? empty : state.at(pos);
                 char piece = op;
-                Pos pos = new Pos(j, i);
                 if (colored) {
                     // TODO: colored
                 }
@@ -67,8 +64,8 @@ public class Util {
         return side == Side.BLACK;
     }
 
-    static Pos coordFromAn(String an) {
-        return new Pos(an.charAt(0) - 97, an.charAt(1) - 48);
+    static int coordFromAn(String an) {
+        return (an.charAt(0) - 97) * 8 + an.charAt(1) - 48;
     }
 
     static double eval(State state) {
@@ -79,11 +76,9 @@ public class Util {
             return pieceValue('k') * (isBlack(state.won()) ? -1 : 1);
         }
         double total = 0;
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                char piece = state.board()[j][i];
-                total += (isBlack(piece) ? -1 : 1) * pieceValue(piece);
-            }
+        for (int i = 0; i < 64; i++) {
+            char piece = state.at(i);
+            total += (isBlack(piece) ? -1 : 1) * pieceValue(piece);
         }
         return total;
     }
@@ -107,29 +102,39 @@ public class Util {
         }
     }
 
-    static boolean offBoard(Pos pos) {
-        return pos.x() < 0 || pos.x() > 7 || pos.y() < 0 || pos.y() > 7;
+    static boolean offBoard(int pos) {
+        return pos < 0 || pos > 63;
     }
 
-    static Pos go(Pos from, int dir) {
-        Pos to = from.clone();
+    static int go(int from, int dir) {
         if (dir == Dir.N || dir == Dir.NE || dir == Dir.NW) {
-            to.setY(to.y() + 1);
+            if (from >= 56) {
+                return -1;
+            }
+            from += 8;
         } else if (dir == Dir.S || dir == Dir.SE || dir == Dir.SW) {
-            to.setY(to.y() - 1);
+            if (from <= 7) {
+                return -1;
+            }
+            from -= 8;
         }
 
         if (dir == Dir.E || dir == Dir.SE || dir == Dir.NE) {
-            to.setX(to.x() + 1);
+            if (from % 8 == 7) {
+                return -1;
+            }
+            from += 1;
         } else if (dir == Dir.W || dir == Dir.SW || dir == Dir.NW) {
-            to.setX(to.x() - 1);
+            if (from % 8 == 0) {
+                return -1;
+            }
+            from -= 1;
         }
-        return to;
+        return from;
     }
 
     static int rand(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max);
-//        return (int) (Math.floor(Math.random() * (max - min + 1)) + min);
     }
 
     static void printBoard(State state, boolean pretty) {
@@ -140,23 +145,27 @@ public class Util {
         return piece == 0;
     }
 
-    static String an(Pos pos, char p) {
-        String n = Character.toString(LETTERS[pos.x()]);
+    static String an(int pos, char p) {
+        int r = (int) Math.floor(pos / 8.0), c = pos % 8;
+        if (c < 0) {
+            c += 8;
+        }
+        String n = Character.toString(LETTERS[c]);
         if (is(p, 'p')) {
-            if (pos.y() <= 0) {
-                n += "1" + PROM[pos.y() * -1];
-            } else if (pos.y() >= 7) {
-                n += "8" + PROM[pos.y() - 7];
+            if (r <= 0) {
+                n += "1" + PROM[r * -1];
+            } else if (r >= 7) {
+                n += "8" + PROM[r - 7];
             } else {
-                n += (pos.y() + 1);
+                n += (r + 1);
             }
         } else {
-            n += (pos.y() + 1);
+            n += (r + 1);
         }
         return n;
     }
 
-    static String an(Pos pos) {
+    static String an(int pos) {
         return an(pos, '\0');
     }
 
@@ -164,13 +173,13 @@ public class Util {
         return str.matches("\\d+");  //match a number with optional '-' and decimal.
     }
 
-    static void log(Object... args) {
+    public static void log(Object... args) {
         StringBuilder str = new StringBuilder();
         for (Object o : args) {
             if (o == null) {
                 str.append("null ");
             } else {
-                str.append(o.toString()).append(" ");
+                str.append(o).append(" ");
             }
         }
         System.out.println(str);

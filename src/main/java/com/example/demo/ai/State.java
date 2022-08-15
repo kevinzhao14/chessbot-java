@@ -4,106 +4,92 @@ import com.example.demo.ai.objects.Check;
 import com.example.demo.ai.objects.Group;
 import com.example.demo.ai.objects.Pair;
 import com.example.demo.ai.objects.Pin;
-import com.example.demo.ai.objects.Pos;
 import com.example.demo.ai.objects.Side;
 import com.example.demo.ai.objects.ValidMoves;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.example.demo.ai.Util.log;
 
 public class State {
-    private final char[][] board;
+    private char[] board;
     private Side turn;
     private Side won;
     private Group<boolean[]> castle;
-    private Pos enPassant;
+    private int enPassant;
     private Check check;
-    private Group<Pos> kings;
-    private Group<HashMap<Pos, ArrayList<ArrayList<Pos>>>> control;
+    private Group<Integer> kings;
+    private Group<HashMap<Integer, ArrayList<ArrayList<Integer>>>> control;
     private ArrayList<Pin> pins;
 
     public State() {
-        this.board = new char[8][8];
+        this.board = new char[64];
         this.turn = Side.WHITE;
         this.won = Side.NONE;
         this.castle = new Group<>(new boolean[]{false, false}, new boolean[]{false, false});
-        this.enPassant = null;
+        this.enPassant = -1;
         this.check = null;
-        this.kings = new Group<>(null, null);
-        this.control = new Group<>(null, null);
+        this.kings = new Group<>(-1, -1);
+        this.control = new Group<>(null, null); // TODO: convert to arrays
         this.pins = null;
     }
 
-    public char at(int x, int y) {
-        if (y > 7 || y < 0 || x< 0 || x > 7) {
+    public char at(int pos) {
+        if (pos < 0 || pos > 63) {
             return 0;
         }
-        return this.board[y][x];
+        return this.board[pos];
     }
 
-    public char at(Pos pos) {
-        return at(pos.x(), pos.y());
+    public void set(int pos, char piece) {
+        this.board[pos] = piece;
     }
 
-    public void set(Pos pos, char piece) {
-        this.board[pos.y()][pos.x()] = piece;
-    }
-
-    public void remove(Pos pos) {
-        this.set(pos, (char) 0);
+    public void remove(int pos) {
+        this.board[pos] = 0;
     }
 
     public State clone() {
         State state = new State();
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                state.board[j][i] = this.board[j][i];
-            }
-        }
+        state.board = this.board.clone();
         state.turn = this.turn;
         state.won = this.won;
 
         state.castle = new Group<>(this.castle.white().clone(), this.castle.black().clone());
-        if (this.enPassant != null) {
-            state.enPassant = this.enPassant.clone();
-        }
+        state.enPassant = this.enPassant;
         if (this.check != null) {
             state.check = this.check.clone();
         }
-        state.kings = new Group<>(this.kings.white().clone(), this.kings.black().clone());
+        state.kings = new Group<>(this.kings.white(), this.kings.black());
 
-        HashMap<Pos, ArrayList<ArrayList<Pos>>> controlWhite = null;
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlWhite = null;
         if (this.control.white() != null) {
             controlWhite = new HashMap<>();
-            for (Pos pos : this.control.white().keySet()) {
-                ArrayList<ArrayList<Pos>> paths = new ArrayList<>();
-                for (ArrayList<Pos> path : this.control.white().get(pos)) {
-                    ArrayList<Pos> newPath = new ArrayList<>();
-                    for (Pos p : path) {
-                        newPath.add(p.clone());
-                    }
-                    paths.add(newPath);
+            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.white().entrySet()) {
+                int pos = entry.getKey();
+                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
+                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
+                for (ArrayList<Integer> path : currPaths) {
+                    paths.add((ArrayList<Integer>) path.clone());
                 }
-                controlWhite.put(pos.clone(), paths);
+                controlWhite.put(pos, paths);
             }
 
         }
-        HashMap<Pos, ArrayList<ArrayList<Pos>>> controlBlack = null;
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlBlack = null;
         if (this.control.black() != null) {
             controlBlack = new HashMap<>();
-            for (Pos pos : this.control.black().keySet()) {
-                ArrayList<ArrayList<Pos>> paths = new ArrayList<>();
-                for (ArrayList<Pos> path : this.control.black().get(pos)) {
-                    ArrayList<Pos> newPath = new ArrayList<>();
-                    for (Pos p : path) {
-                        newPath.add(p.clone());
-                    }
-                    paths.add(newPath);
+            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.black().entrySet()) {
+                int pos = entry.getKey();
+                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
+                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
+                for (ArrayList<Integer> path : currPaths) {
+                    paths.add((ArrayList<Integer>) path.clone());
                 }
-                controlBlack.put(pos.clone(), paths);
+                controlBlack.put(pos, paths);
             }
         }
 
@@ -118,36 +104,34 @@ public class State {
     }
 
     public void calcControls(Side side) {
-        HashMap<Pos, ArrayList<ArrayList<Pos>>> control = new HashMap<>();
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> control = new HashMap<>();
         ArrayList<Pin> pins = new ArrayList<>();
 
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                Pos pos = new Pos(j, i);
-                char piece = this.board[i][j];
+        for (int i = 0; i < 64; i++) {
+                char piece = this.board[i];
                 if (Util.sideOf(piece) != side) {
                     continue;
                 }
-                ValidMoves squares = Bot.getValidMoves(piece, pos, this, true);
-                control.put(pos.clone(), squares.control());
+                ValidMoves squares = Bot.getValidMoves(piece, i, this, true);
+                control.put(i, squares.control());
                 pins.addAll(squares.pins());
-            }
         }
 
         this.control.set(side, control);
         this.pins(pins);
     }
 
-    public ArrayList<Pair<Pos, ArrayList<Pos>>> isControlled(Pos pos, Side side) {
+    public ArrayList<Pair<Integer, ArrayList<Integer>>> isControlled(int pos, Side side) {
         if (this.control.get(side) == null) {
             return null;
         }
-        ArrayList<Pair<Pos, ArrayList<Pos>>> pathList = new ArrayList<>();
-        for (Pos by : this.control.get(side).keySet()) {
-            ArrayList<ArrayList<Pos>> paths = this.control.get(side).get(by);
-            for (ArrayList<Pos> path : paths) {
-                for (Pos p : path) {
-                    if (p.equals(pos)) {
+        ArrayList<Pair<Integer, ArrayList<Integer>>> pathList = new ArrayList<>();
+        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.get(side).entrySet()) {
+            int by = entry.getKey();
+            ArrayList<ArrayList<Integer>> paths = entry.getValue();
+            for (ArrayList<Integer> path : paths) {
+                for (int p : path) {
+                    if (p == pos) {
                         pathList.add(new Pair<>(by, path));
                     }
                 }
@@ -157,12 +141,12 @@ public class State {
     }
 
     public boolean calcCheck() {
-        Pos kingPos = this.kings.get(this.turn);
-        ArrayList<Pair<Pos, ArrayList<Pos>>> isCheck = this.isControlled(kingPos, this.turn.opp());
+        int kingPos = this.kings.get(this.turn);
+        ArrayList<Pair<Integer, ArrayList<Integer>>> isCheck = this.isControlled(kingPos, this.turn.opp());
         if (isCheck != null) {
             if (isCheck.size() == 1) {
-                Pair<Pos, ArrayList<Pos>> check = isCheck.get(0);
-                ArrayList<Pos> newList = new ArrayList<>(check.b());
+                Pair<Integer, ArrayList<Integer>> check = isCheck.get(0);
+                ArrayList<Integer> newList = new ArrayList<>(check.b());
                 newList.add(0, check.a());
                 this.check = new Check(check.a(), newList);
             } else {
@@ -172,10 +156,6 @@ public class State {
         }
         this.check = null;
         return false;
-    }
-
-    public char[][] board() {
-        return board;
     }
 
     public Side turn() {
@@ -198,11 +178,11 @@ public class State {
         return castle;
     }
 
-    public Pos enPassant() {
+    public int enPassant() {
         return enPassant;
     }
 
-    public void enPassant(Pos pos) {
+    public void enPassant(int pos) {
         this.enPassant = pos;
     }
 
@@ -210,7 +190,7 @@ public class State {
         return check;
     }
 
-    public Group<Pos> kings() {
+    public Group<Integer> kings() {
         return kings;
     }
 
@@ -220,10 +200,6 @@ public class State {
 
     public void pins(ArrayList<Pin> pins) {
         this.pins = pins;
-    }
-
-    public Group<HashMap<Pos, ArrayList<ArrayList<Pos>>>> control() {
-        return control;
     }
 
     @Override
