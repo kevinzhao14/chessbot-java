@@ -3,7 +3,6 @@ package com.example.demo.ai;
 import com.example.demo.ai.objects.BestMove;
 import com.example.demo.ai.objects.Check;
 import com.example.demo.ai.objects.Move;
-import com.example.demo.ai.objects.Pair;
 import com.example.demo.ai.objects.Pin;
 import com.example.demo.ai.objects.Side;
 import com.example.demo.ai.objects.Static;
@@ -196,7 +195,7 @@ public class Bot {
         }
         HashMap<Integer, ArrayList<Integer>> valid = allValidMoves(state);
 
-        ArrayList<Pair<Move, Integer>> validMoves = new ArrayList<>();
+        ArrayList<Move> validMoves = new ArrayList<>();
         for (Map.Entry<Integer, ArrayList<Integer>> entry : valid.entrySet()) {
             int from = entry.getKey();
             ArrayList<Integer> tos = entry.getValue();
@@ -206,17 +205,16 @@ public class Bot {
                 if (toPiece != 0) {
                     score = Util.pieceValue(toPiece);
                 }
-                validMoves.add(new Pair<>(new Move(from, to), score));
+                validMoves.add(new Move(from, to, score));
             }
         }
-        validMoves.sort((o1, o2) -> o2.b() - o1.b());
+        validMoves.sort((o1, o2) -> o2.score() - o1.score());
 
-        ArrayList<Pair<Move, LinkedList<Move>>> best = new ArrayList<>();
+        ArrayList<Move> best = new ArrayList<>();
         boolean useBeta = false;
         double bestScore = 0;
 
-        for (Pair<Move, Integer> movePair : validMoves) {
-            Move move = movePair.a();
+        for (Move move : validMoves) {
             int from = move.from();
             int to = move.to();
 
@@ -233,6 +231,7 @@ public class Bot {
                 if (childBest.move != null) {
                     line.addAll(0, childBest.line);
                     line.add(0, childBest.move);
+                    childBest.move.setLine(null);
                 }
 
                 score += MULT * childBest.score;
@@ -242,11 +241,11 @@ public class Bot {
 
             if (best.size() == 0 || (isBlack(state.turn()) ? score <= bestScore : score >= bestScore)) {
                 if (score != bestScore) {
-                    useBeta = true;
                     bestScore = score;
                     best.clear();
                 }
-                best.add(new Pair<>(new Move(from, to), line));
+                useBeta = true;
+                best.add(new Move(from, to, line));
 
                 if (hasAlpha) {
                     if (isBlack(state.turn()) && score < alpha) {
@@ -258,18 +257,17 @@ public class Bot {
             }
         }
 
-        Pair<Move, LinkedList<Move>> bestRand = best.get(best.size() == 1 ? 0 : Util.rand(0, best.size()));
+        Move bestRand = best.get(best.size() == 1 ? 0 : Util.rand(0, best.size()));
         if (depth == DEPTH && best.size() > 1) {
             System.out.println("\nRandomly moving out of " + best.size() + " moves");
             if (LOG) {
-                for (Pair<Move, LinkedList<Move>> b : best) {
-                    Move move = b.a();
+                for (Move move : best) {
                     System.out.println(Util.an(move.from()) + " -> " + Util.an(move.to()));
                 }
             }
         }
 
-        return new MoveInfo(bestRand.a(), bestScore, bestRand.b());
+        return new MoveInfo(bestRand, bestScore, bestRand.line());
     }
 
     static MoveInfo bestMove(State state) {
@@ -673,17 +671,19 @@ public class Bot {
         int n = 0;
         for (int i = min; i <= max; i++) {
             State state = originalState.clone();
-//            long start = System.nanoTime();
+            long start = System.nanoTime();
 
             long count = movesTest(state, i);
 
-//            double time = (System.nanoTime() - start) / 1000000.0;
+            double time = (System.nanoTime() - start) / 1000000.0;
             nodes[n] = count;
             n++;
 
-//            System.out.println("----- Depth " + i);
-//            System.out.println("Moves: " + count);
-//            System.out.println("Time: " + time);
+            if (LOG) {
+                System.out.println("----- Depth " + i);
+                System.out.println("Moves: " + count);
+                System.out.println("Time: " + time);
+            }
         }
 
         return nodes;
