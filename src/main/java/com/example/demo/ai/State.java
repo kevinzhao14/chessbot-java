@@ -18,7 +18,7 @@ public class State {
     private char[] board;
     private Side turn;
     private Side won;
-    private Group<boolean[]> castle;
+    private boolean[] castle;
     private int enPassant;
     private Check check;
     private Group<Integer> kings;
@@ -29,7 +29,7 @@ public class State {
         this.board = new char[64];
         this.turn = Side.WHITE;
         this.won = Side.NONE;
-        this.castle = new Group<>(new boolean[]{false, false}, new boolean[]{false, false});
+        this.castle = new boolean[] {false, false, false, false};
         this.enPassant = -1;
         this.check = null;
         this.kings = new Group<>(-1, -1);
@@ -58,7 +58,7 @@ public class State {
         state.turn = this.turn;
         state.won = this.won;
 
-        state.castle = new Group<>(this.castle.white().clone(), this.castle.black().clone());
+        state.castle = Arrays.copyOf(this.castle, 4);
         state.enPassant = this.enPassant;
         if (this.check != null) {
             state.check = this.check.clone();
@@ -154,7 +154,7 @@ public class State {
         this.won = side;
     }
 
-    public Group<boolean[]> castle() {
+    public boolean[] castle() {
         return castle;
     }
 

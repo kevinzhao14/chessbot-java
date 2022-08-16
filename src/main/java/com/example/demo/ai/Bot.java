@@ -176,7 +176,8 @@ public class Bot {
             setup = data[2].split("");
             for (String castle : setup) {
                 char cv = castle.charAt(0);
-                state.castle().get(sideOf(cv))[is(cv, 'k') ? 0 : 1] = true;
+                int index = (is(cv, 'k') ? 0 : 1) + (isBlack(sideOf(cv)) ? 2 : 0);
+                state.castle()[index] = true;
             }
         }
 
@@ -481,13 +482,14 @@ public class Bot {
 
                 // castling
                 if (!getControl && state.isControlled(p) == null) {
-                    boolean[] castle = state.castle().get(side);
-                    if (castle[0] && state.at(p + 1) == 0
+                    boolean[] castle = state.castle();
+                    int index = isBlack(side) ? 2 : 0;
+                    if (castle[index] && state.at(p + 1) == 0
                     && state.at(p + 2) == 0
                     && state.isControlled(p + 1) == null) {
                         moves.add(p + 2);
                     }
-                    if (castle[1] && state.at(p - 1) == 0
+                    if (castle[index + 1] && state.at(p - 1) == 0
                     && state.at(p - 2) == 0
                     && state.at(p - 3) == 0
                     && state.isControlled(p - 1) == null) {
@@ -590,25 +592,29 @@ public class Bot {
                 state.set(newRookPos, isBlack(side) ? 'r' : 'R');
                 state.remove(rookPos);
             }
-            state.castle().set(side, new boolean[]{false, false});
+            int index = isBlack(side) ? 2 : 0;
+            state.castle()[index] = false;
+            state.castle()[index + 1] = false;
             state.kings().set(side, to);
 
         } else if (is(fromPiece, 'r')) {
             // cancel castling
-            boolean[] castle = state.castle().get(side);
-            if (castle[0] && from == (isBlack(side) ? 63 : 7)) {
-                castle[0] = false;
-            } else if (castle[1] && from == (isBlack(side) ? 56 : 0)) {
-                castle[1] = false;
+            boolean[] castle = state.castle();
+            int ind = isBlack(side) ? 2 : 0;
+            if (castle[ind] && from == (isBlack(side) ? 63 : 7)) {
+                castle[ind] = false;
+            } else if (castle[ind + 1] && from == (isBlack(side) ? 56 : 0)) {
+                castle[ind + 1] = false;
             }
 
         } else if (toPiece != 0 && is(toPiece, 'r')) {
             // cancel castling
-            boolean[] castle = state.castle().get(side.opp());
-            if (castle[0] && to == (isBlack(side) ? 7 : 63)) {
-                castle[0] = false;
-            } else if (castle[1] && to == (isBlack(side) ? 0 : 56)) {
-                castle[1] = false;
+            boolean[] castle = state.castle();
+            int ind = isBlack(side) ? 0 : 2;
+            if (castle[ind] && to == (isBlack(side) ? 7 : 63)) {
+                castle[ind] = false;
+            } else if (castle[ind + 1] && to == (isBlack(side) ? 0 : 56)) {
+                castle[ind + 1] = false;
             }
         }
 

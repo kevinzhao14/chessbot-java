@@ -19,5 +19,5 @@ ID   | Type  | Description
 15   | ~OPT   | ~~store board as 64 rather than 2d array~~
 16   | OPT   | long methods instead of short ones that talk
 17   | OPT   | return asap
-18   | OPT   | move goPath outside of getValidMoves
-19   | OPT   | change control to be one side, not a group
+18   | ~OPT   | ~~move goPath outside of getValidMoves - SLOWER~~
+19   | ~OPT   | ~~change control to be one side, not a group~~
