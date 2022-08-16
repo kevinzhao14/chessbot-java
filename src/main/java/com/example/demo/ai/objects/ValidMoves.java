@@ -5,19 +5,19 @@ import java.util.ArrayList;
 public class ValidMoves {
     ArrayList<Integer> moves;
     ArrayList<Pin> pins;
-    ArrayList<ArrayList<Integer>> control;
+    ArrayList<Long> control;
 
     public ValidMoves(ArrayList<Integer> moves) {
         this.moves = moves;
         this.control = null;
     }
 
-    public ValidMoves(ArrayList<ArrayList<Integer>> control, ArrayList<Pin> pins) {
+    public ValidMoves(ArrayList<Long> control, ArrayList<Pin> pins) {
         this.control = control;
         this.pins = pins;
     }
 
-    public ArrayList<ArrayList<Integer>> control() {
+    public ArrayList<Long> control() {
         return control;
     }
 

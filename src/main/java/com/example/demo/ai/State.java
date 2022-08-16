@@ -12,6 +12,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.demo.ai.Util.bit;
+import static com.example.demo.ai.Util.bitmapAdd;
+import static com.example.demo.ai.Util.bitmapHas;
 import static com.example.demo.ai.Util.log;
 
 public class State {
@@ -22,7 +25,7 @@ public class State {
     private int enPassant;
     private Check check;
     private Group<Integer> kings;
-    private Group<HashMap<Integer, ArrayList<ArrayList<Integer>>>> control;
+    private Group<HashMap<Integer, ArrayList<Long>>> control;
     private ArrayList<Pin> pins;
 
     public State() {
@@ -65,31 +68,23 @@ public class State {
         }
         state.kings = new Group<>(this.kings.white(), this.kings.black());
 
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlWhite = null;
+        HashMap<Integer, ArrayList<Long>> controlWhite = null;
         if (this.control.white() != null) {
             controlWhite = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.white().entrySet()) {
+            for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.white().entrySet()) {
                 int pos = entry.getKey();
-                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
-                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : currPaths) {
-                    paths.add((ArrayList<Integer>) path.clone());
-                }
-                controlWhite.put(pos, paths);
+                ArrayList<Long> currPaths = entry.getValue();
+                controlWhite.put(pos, (ArrayList<Long>) currPaths.clone());
             }
 
         }
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlBlack = null;
+        HashMap<Integer, ArrayList<Long>> controlBlack = null;
         if (this.control.black() != null) {
             controlBlack = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.black().entrySet()) {
+            for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.black().entrySet()) {
                 int pos = entry.getKey();
-                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
-                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : currPaths) {
-                    paths.add((ArrayList<Integer>) path.clone());
-                }
-                controlBlack.put(pos, paths);
+                ArrayList<Long> currPaths = entry.getValue();
+                controlBlack.put(pos, (ArrayList<Long>) currPaths.clone());
             }
         }
 
@@ -104,7 +99,7 @@ public class State {
     }
 
     public void calcControls(Side side) {
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> control = new HashMap<>();
+        HashMap<Integer, ArrayList<Long>> control = new HashMap<>();
         ArrayList<Pin> pins = new ArrayList<>();
 
         for (int i = 0; i < 64; i++) {
@@ -121,17 +116,20 @@ public class State {
         this.pins(pins);
     }
 
-    public ArrayList<Pair<Integer, ArrayList<Integer>>> isControlled(int pos, Side side) {
+    public ArrayList<Pair<Integer, Long>> isControlled(int pos, Side side) {
         if (this.control.get(side) == null) {
             return null;
         }
-        ArrayList<Pair<Integer, ArrayList<Integer>>> pathList = new ArrayList<>();
-        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.get(side).entrySet()) {
+        ArrayList<Pair<Integer, Long>> pathList = new ArrayList<>();
+        for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.get(side).entrySet()) {
             int by = entry.getKey();
-            ArrayList<ArrayList<Integer>> paths = entry.getValue();
-            for (ArrayList<Integer> path : paths) {
-                for (int p : path) {
-                    if (p == pos) {
+            ArrayList<Long> paths = entry.getValue();
+            for (long path : paths) {
+                for (int i = 0; i < 64; i++) {
+                    if (!bitmapHas(path, bit(i))) {
+                        continue;
+                    }
+                    if (i == pos) {
                         pathList.add(new Pair<>(by, path));
                     }
                 }
@@ -142,15 +140,14 @@ public class State {
 
     public boolean calcCheck() {
         int kingPos = this.kings.get(this.turn);
-        ArrayList<Pair<Integer, ArrayList<Integer>>> isCheck = this.isControlled(kingPos, this.turn.opp());
+        ArrayList<Pair<Integer, Long>> isCheck = this.isControlled(kingPos, this.turn.opp());
         if (isCheck != null) {
             if (isCheck.size() == 1) {
-                Pair<Integer, ArrayList<Integer>> check = isCheck.get(0);
-                ArrayList<Integer> newList = new ArrayList<>(check.b());
-                newList.add(0, check.a());
-                this.check = new Check(check.a(), newList);
+                Pair<Integer, Long> check = isCheck.get(0);
+                long newMap = bitmapAdd(check.b(), bit(check.a()));
+                this.check = new Check(check.a(), newMap);
             } else {
-                this.check = new Check(kingPos, new ArrayList<>());
+                this.check = new Check(kingPos, 0);
             }
             return true;
         }
@@ -200,6 +197,10 @@ public class State {
 
     public void pins(ArrayList<Pin> pins) {
         this.pins = pins;
+    }
+
+    public Group<HashMap<Integer, ArrayList<Long>>> getControl() {
+        return control;
     }
 
     @Override

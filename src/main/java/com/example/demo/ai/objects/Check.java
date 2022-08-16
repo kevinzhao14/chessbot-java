@@ -4,18 +4,26 @@ import java.util.ArrayList;
 
 public class Check {
     int by;
-    ArrayList<Integer> path;
+    long path;
 
-    public Check(int by, ArrayList<Integer> path) {
+    public Check(int by, long path) {
         this.by = by;
         this.path = path;
     }
 
     public Check clone() {
-        return new Check(this.by, (ArrayList<Integer>) this.path.clone());
+        return new Check(this.by, this.path);
     }
 
-    public ArrayList<Integer> path() {
+    public long path() {
         return path;
+    }
+
+    @Override
+    public String toString() {
+        return "Check{" +
+                "by=" + by +
+                ", path=" + path +
+                '}';
     }
 }

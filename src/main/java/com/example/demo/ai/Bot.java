@@ -319,7 +319,7 @@ public class Bot {
     static ValidMoves getValidMoves(char piece, int p, State state, boolean getControl) {
         Side side = sideOf(piece);
         ArrayList<Integer> moves = new ArrayList<>();
-        ArrayList<ArrayList<Integer>> control = new ArrayList<>();
+        ArrayList<Long> control = new ArrayList<>();
         ArrayList<Pin> pins = new ArrayList<>();
 
         class Pather {
@@ -329,7 +329,7 @@ public class Bot {
                     boolean pin = false;
                     boolean kingPin = false;
                     long pinMoves = 0;
-                    ArrayList<Integer> path = new ArrayList<>();
+                    long path = 0;
 
                     pinMoves = bitmapAdd(pinMoves, bit(p));
 
@@ -349,7 +349,7 @@ public class Bot {
 
                             if (sideOf(ap) != side) {
                                 if (getControl) {
-                                    path.add(pos);
+                                    path = bitmapAdd(path, bit(pos));
                                     if (is(ap, 'k')) {
                                         kingPin = true;
                                         break;
@@ -363,7 +363,7 @@ public class Bot {
                                 }
                             } else {
                                 if (getControl) {
-                                    path.add(pos);
+                                    path = bitmapAdd(path, bit(pos));
                                 }
                                 break;
                             }
@@ -374,7 +374,7 @@ public class Bot {
                         }
                         if (!pin) {
                             if (getControl) {
-                                path.add(pos);
+                                path = bitmapAdd(path, bit(pos));
                             } else {
                                 moves.add(pos);
                             }
@@ -429,7 +429,7 @@ public class Bot {
                     }
                     char take = state.at(tp);
                     if (getControl) {
-                        control.add(new ArrayList<>(Collections.singletonList(tp)));
+                        control.add(bit(tp));
                     } else if (state.enPassant() != -1 && tp == state.enPassant()) {
                         State sim = state.clone();
                         sim.set(tp, sim.at(p));
@@ -456,9 +456,7 @@ public class Bot {
                         continue;
                     }
                     if (getControl) {
-                        ArrayList<Integer> list = new ArrayList<>();
-                        list.add(pos);
-                        control.add(list);
+                        control.add(bit(pos));
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
                         moves.add(pos);
                     }
@@ -471,9 +469,7 @@ public class Bot {
                         continue;
                     }
                     if (getControl) {
-                        ArrayList<Integer> list = new ArrayList<>();
-                        list.add(pos);
-                        control.add(list);
+                        control.add(bit(pos));
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
                         moves.add(pos);
                     }
@@ -510,7 +506,7 @@ public class Bot {
         if (!getControl) {
             Check check = state.check();
             boolean inCheck = false;
-            ArrayList<Integer> checkMoves = new ArrayList<>();
+            long checkMoves = 0;
             if (check != null) {
                 checkMoves = check.path();
                 inCheck = true;
@@ -536,9 +532,15 @@ public class Bot {
                         continue;
                     }
 
+                    if (move < 0) {
+                        move -= Math.floor(move / 8.0) * 8;
+                    } else if (move > 63) {
+                        move = 56 + move % 8;
+                    }
+
                     // king moving to a controlled square
                     if ((isKing && state.isControlled(move, side.opp()) != null)
-                            || (!isKing && inCheck && !checkMoves.contains(move))) {
+                            || (!isKing && inCheck && !bitmapHas(checkMoves, bit(move)))) {
                         moves.remove(i);
                         i--;
                     }
@@ -669,7 +671,8 @@ public class Bot {
         long[] nodes = new long[max - min + 1];
 
         if (LOG) {
-            log("pins", originalState.pins());
+            log("control", originalState.getControl().white());
+            log("check", originalState.check());
         }
 
         int n = 0;
@@ -703,7 +706,7 @@ public class Bot {
         HashMap<Integer, ArrayList<Integer>> moves = allValidMoves(state);
         int num = 0;
         if (LOG && depth == logDepth) {
-            log("moves", moves);
+//            log("moves", moves);
         }
         for (int from : moves.keySet()) {
             ArrayList<Integer> tos = moves.get(from);

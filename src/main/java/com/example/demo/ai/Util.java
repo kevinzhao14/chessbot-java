@@ -185,15 +185,15 @@ public class Util {
         System.out.println(str);
     }
 
-    static long bit(long pos) {
+    public static long bit(long pos) {
         return 1L << (pos - ((pos % 8) * 2 - 7));
     }
 
-    static boolean bitmapHas(long bitmap, long has) {
+    public static boolean bitmapHas(long bitmap, long has) {
         return (bitmap & has) != 0;
     }
 
-    static long bitmapAdd(long bitmap, long bit) {
+    public static long bitmapAdd(long bitmap, long bit) {
         return bitmap | bit;
     }
 
