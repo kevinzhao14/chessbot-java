@@ -134,7 +134,7 @@ public class BotTest {
     @Test
     void testAll() {
         String[] all = concatenate(tests_black, tests_white);
-        testSuite(all, 1);
+        testSuite(all, 5);
     }
 
     @Test
