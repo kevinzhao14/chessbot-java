@@ -33,7 +33,7 @@ public class Bot {
 
     static boolean LOG = false;
 
-    static boolean EXTRA_DEPTH = false;
+    static boolean EXTRA_DEPTH = true;
 
     private static int nodes = 0;
 
@@ -46,25 +46,19 @@ public class Bot {
 
 
         // TODO: extraDepth
-//        int c = 0;
-//        for (char[] row : state.board()) {
-//            for (char p : row) {
-//                if (p != 0) c++;
-//            }
-//        }
-//        int extraDepth = (int) Math.floor((32 - c) / 22.0) * 2;
-//        if (EXTRA_DEPTH && extraDepth > 0) {
-//            DEPTH += extraDepth;
-//            System.out.println("Extra depth: " + DEPTH);
-//        }
+        int extraDepth = (int) Math.floor((32 - state.count()) / 16.0);
+        if (EXTRA_DEPTH && extraDepth > 0) {
+            DEPTH += extraDepth;
+            System.out.println("Extra depth: " + DEPTH);
+        }
 
         long start = System.nanoTime();
         MoveInfo best = bestMove(state);
         double total = (System.nanoTime() - start) / 1000000.0;
 
-//        if (EXTRA_DEPTH) {
-//            DEPTH -= extraDepth;
-//        }
+        if (EXTRA_DEPTH) {
+            DEPTH -= extraDepth;
+        }
 
         int from = -1;
         int to = -1;

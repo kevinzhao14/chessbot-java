@@ -138,6 +138,16 @@ public class State {
         return false;
     }
 
+    public int count() {
+        int count = 0;
+        for (int i = 0; i < 64; i++) {
+            if (this.board[i] != 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public Side turn() {
         return turn;
     }
