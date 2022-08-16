@@ -25,7 +25,7 @@ import static com.example.demo.ai.Util.offBoard;
 import static com.example.demo.ai.Util.sideOf;
 
 public class Bot {
-    static int DEPTH = 4;
+    static int DEPTH = 5;
 
     static int MULT = 1;
 
@@ -44,8 +44,6 @@ public class Bot {
 //            System.out.println(getValidMoves('P', 12, state));
         }
 
-
-//        return new BestMove(null, null, '\0'); /*
 
         // TODO: extraDepth
 //        int c = 0;
@@ -78,7 +76,7 @@ public class Bot {
             to = best.move.to();
 
             if (is(state.at(from), 'p')) {
-                int r = (int) Math.floor(from / 8.0);
+                int r = (int) Math.floor(to / 8.0);
                 if (r <= 0) {
                     res.setPromote(Util.PROM[r * -1]);
                     to -= r * 8;
@@ -205,14 +203,23 @@ public class Bot {
             ArrayList<Integer> tos = entry.getValue();
             for (int to : tos) {
                 char toPiece = state.at(to);
-                int score = 0;
+                double score = 0;
                 if (toPiece != 0) {
-                    score = Util.pieceValue(toPiece);
+                    score = Util.pieceValue(toPiece, to);
                 }
                 validMoves.add(new Move(from, to, score));
             }
         }
-        validMoves.sort((o1, o2) -> o2.score() - o1.score());
+        validMoves.sort((o1, o2) -> {
+            double diff = o2.score() - o1.score();
+            if (diff < 0) {
+                return -1;
+            } else if (diff > 0) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
 
         ArrayList<Move> best = new ArrayList<>();
         boolean useBeta = false;

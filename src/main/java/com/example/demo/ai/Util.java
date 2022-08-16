@@ -2,6 +2,7 @@ package com.example.demo.ai;
 
 import com.example.demo.ai.objects.Dir;
 import com.example.demo.ai.objects.Side;
+import com.example.demo.ai.objects.Static;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -73,30 +74,36 @@ public class Util {
             if (state.won() == Side.DRAW) {
                 return 0;
             }
-            return pieceValue('k') * (isBlack(state.won()) ? -1 : 1);
+            return isBlack(state.won()) ? -1000 : 1000;
         }
         double total = 0;
         for (int i = 0; i < 64; i++) {
             char piece = state.at(i);
-            total += (isBlack(piece) ? -1 : 1) * pieceValue(piece);
+            if (piece == 0) {
+                continue;
+            }
+            total += (isBlack(piece) ? -1 : 1) * pieceValue(piece, i);
         }
         return total;
     }
 
-    static int pieceValue(char piece) {
+    static double pieceValue(char piece, int pos) {
+        if (isBlack(sideOf(piece))) {
+            pos = (7 - (pos / 8)) * 8 + pos % 8;
+        }
         switch (Character.toLowerCase(piece)) {
             case 'p':
-                return 1;
+                return 1 + Static.BONUS_P[pos];
             case 'r':
-                return 5;
+                return 5 + Static.BONUS_R[pos];
             case 'b':
-                return 3;
+                return 3 + Static.BONUS_B[pos];
             case 'n':
-                return 3;
+                return 3 + Static.BONUS_N[pos];
             case 'q':
-                return 9;
+                return 9 + Static.BONUS_Q[pos];
             case 'k':
-                return 1000;
+                return 10 + Static.BONUS_K[pos];
             default:
                 return 0;
         }

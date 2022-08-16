@@ -33,7 +33,7 @@ public class State {
         this.enPassant = -1;
         this.check = null;
         this.kings = new Group<>(-1, -1);
-        this.control = null; // TODO: convert to arrays
+        this.control = null;
         this.pins = null;
     }
 
@@ -188,7 +188,7 @@ public class State {
                 "board=" + Arrays.toString(board) +
                 ", turn=" + turn +
                 ", won=" + won +
-                ", castle=" + castle +
+                ", castle=" + Arrays.toString(castle) +
                 ", enPassant=" + enPassant +
                 ", check=" + check +
                 ", kings=" + kings +

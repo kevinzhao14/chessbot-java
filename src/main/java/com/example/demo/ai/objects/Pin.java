@@ -1,7 +1,5 @@
 package com.example.demo.ai.objects;
 
-import java.util.ArrayList;
-
 public class Pin {
     int pinPiece;
     long pinMoves;

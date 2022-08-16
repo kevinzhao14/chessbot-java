@@ -6,7 +6,7 @@ public class Move {
     int from;
     int to;
     LinkedList<Move> line;
-    int score;
+    double score;
 
     public Move(int from, int to, LinkedList<Move> line) {
         this.from = from;
@@ -14,7 +14,7 @@ public class Move {
         this.line = line;
     }
 
-    public Move(int from, int to, int score) {
+    public Move(int from, int to, double score) {
         this(from, to, null);
         this.score = score;
     }
@@ -35,7 +35,7 @@ public class Move {
         return line;
     }
 
-    public int score() {
+    public double score() {
         return score;
     }
 
