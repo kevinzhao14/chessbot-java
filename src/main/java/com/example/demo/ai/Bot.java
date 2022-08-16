@@ -316,14 +316,100 @@ public class Bot {
         return false;
     }
 
+//    static long[] goPaths(int p, int from, int to, State state, Side side, boolean getControl,
+////                   ArrayList<Integer> moves, ArrayList<Pin> pins, ArrayList<Long> control) {
+////                   ArrayList<Integer> moves, ArrayList<Pin> pins, long[] control, int controlInd) {
+//                   ArrayList<Integer> moves, ArrayList<Pin> pins) {
+//        long[] control = new long[to - from + 1];
+//        int controlInd = 0;
+//
+//        for (int i = from; i < to; i++) {
+//            int pinPiece = -1;
+//            boolean pin = false;
+//            boolean kingPin = false;
+//            long pinMoves = 0;
+//            long path = 0;
+//
+//            pinMoves = bitmapAdd(pinMoves, bit(p));
+//
+//            int pos = Util.go(p, i);
+//            while (!Util.offBoard(pos)) {
+////                    if (getControl && p.equals(new Pos(4, 1))) log("p", i, pos, path, control);
+//                char ap = state.at(pos);
+//
+//                if (ap != 0) {
+//                    if (pin) {
+//                        if (is(ap, 'k') && sideOf(ap) != side) {
+//                            pins.add(new Pin(pinPiece, pinMoves));
+//                        }
+//
+//                        break;
+//                    }
+//
+//                    if (sideOf(ap) != side) {
+//                        if (getControl) {
+//                            path = bitmapAdd(path, bit(pos));
+//                            if (is(ap, 'k')) {
+//                                kingPin = true;
+//                                break;
+//                            } else {
+//                                pin = true;
+//                                pinPiece = pos;
+//                            }
+//                        } else {
+//                            moves.add(pos);
+//                            break;
+//                        }
+//                    } else {
+//                        if (getControl) {
+//                            path = bitmapAdd(path, bit(pos));
+//                        }
+//                        break;
+//                    }
+//                }
+//
+//                if (!kingPin) {
+//                    pinMoves = bitmapAdd(pinMoves, bit(pos));
+//                }
+//                if (!pin) {
+//                    if (getControl) {
+//                        path = bitmapAdd(path, bit(pos));
+//                    } else {
+//                        moves.add(pos);
+//                    }
+//                }
+//
+//                pos = Util.go(pos, i);
+//            }
+//
+//            if (getControl) {
+////                control.add(path);
+//                control[controlInd++] = path;
+//                if (kingPin) {
+////                    goPaths(pos, i, i + 1, state, side, getControl, moves, pins, control);
+////                    goPaths(pos, i, i + 1, state, side, getControl, moves, pins, control, controlInd);
+//                    control[controlInd++] = goPaths(pos, i, i + 1, state, side, getControl, moves, pins)[0];
+//                }
+//            }
+//        }
+//        return control;
+//    }
+
     static ValidMoves getValidMoves(char piece, int p, State state, boolean getControl) {
         Side side = sideOf(piece);
         ArrayList<Integer> moves = new ArrayList<>();
-        ArrayList<Long> control = new ArrayList<>();
+        long[] control;
+        int controlInd = 0;
+//        ArrayList<Long> control = new ArrayList<>();
         ArrayList<Pin> pins = new ArrayList<>();
 
         class Pather {
-            void go(int p, int from, int to) {
+            long[] goPaths(int p, int from, int to) {
+//                   ArrayList<Integer> moves, ArrayList<Pin> pins, ArrayList<Long> control) {
+//                   ArrayList<Integer> moves, ArrayList<Pin> pins, long[] control, int controlInd) {
+                long[] control = new long[to - from + 1];
+                int controlInd = 0;
+
                 for (int i = from; i < to; i++) {
                     int pinPiece = -1;
                     boolean pin = false;
@@ -384,17 +470,20 @@ public class Bot {
                     }
 
                     if (getControl) {
-                        control.add(path);
+//                control.add(path);
+                        control[controlInd++] = path;
                         if (kingPin) {
-                            new Pather().go(pos, i, i + 1);
+                            control[controlInd++] = new Pather().goPaths(pos, i, i + 1)[0];
                         }
                     }
                 }
+                return control;
             }
         }
 
         switch (Character.toLowerCase((piece))) {
             case 'p':
+                control = new long[2];
                 int dir = isBlack(side) ? -8 : 8;
                 int single = p + dir;
                 if (!getControl && state.at(single) == 0) {
@@ -429,7 +518,8 @@ public class Bot {
                     }
                     char take = state.at(tp);
                     if (getControl) {
-                        control.add(bit(tp));
+//                        control.add(bit(tp));
+                        control[controlInd++] = bit(tp);
                     } else if (state.enPassant() != -1 && tp == state.enPassant()) {
                         State sim = state.clone();
                         sim.set(tp, sim.at(p));
@@ -451,12 +541,14 @@ public class Bot {
                 break;
 
             case 'n':
+                control = new long[8];
                 for (int pos : Static.N[p]) {
                     if (offBoard(pos)) {
                         continue;
                     }
                     if (getControl) {
-                        control.add(bit(pos));
+//                        control.add(bit(pos));
+                        control[controlInd++] = bit(pos);
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
                         moves.add(pos);
                     }
@@ -464,12 +556,14 @@ public class Bot {
                 break;
 
             case 'k':
+                control = new long[8];
                 for (int pos : Static.K[p]) {
                     if (offBoard(pos)) {
                         continue;
                     }
                     if (getControl) {
-                        control.add(bit(pos));
+//                        control.add(bit(pos));
+                        control[controlInd++] = bit(pos);
                     } else if (state.at(pos) == 0 || sideOf(state.at(pos)) != side) {
                         moves.add(pos);
                     }
@@ -493,14 +587,27 @@ public class Bot {
                 break;
 
             case 'r':
-                new Pather().go(p, 0, 4);
+                control = new Pather().goPaths(p, 0, 4);
+//                control = goPaths(p, 0, 4, state, side, getControl, moves, pins);
+//                goPaths(p, 0, 4, state, side, getControl, moves, pins, control, controlInd);
+//                goPaths(p, 0, 4, state, side, getControl, moves, pins, control);
+//                new Pather().go(p, 0, 4);
                 break;
             case 'b':
-                new Pather().go(p, 4, 8);
+                control = new Pather().goPaths(p, 4, 8);
+//                control = goPaths(p, 4, 8, state, side, getControl, moves, pins);
+//                goPaths(p, 4, 8, state, side, getControl, moves, pins, control, controlInd);
+//                goPaths(p, 4, 8, state, side, getControl, moves, pins, control);
+//                new Pather().go(p, 4, 8);
                 break;
             case 'q':
-                new Pather().go(p, 0, 8);
+                control = new Pather().goPaths(p, 0, 8);
+//                control = goPaths(p, 0, 8, state, side, getControl, moves, pins);
+//                goPaths(p, 0, 8, state, side, getControl, moves, pins, control);
+//                new Pather().go(p, 0, 8);
                 break;
+            default:
+                control = new long[0];
         }
 
         if (!getControl) {
@@ -549,6 +656,7 @@ public class Bot {
         }
 
         if (getControl) {
+//            return new ValidMoves(control.stream().mapToLong(i -> i).toArray(), pins);
             return new ValidMoves(control, pins);
         } else {
             return new ValidMoves(moves);
@@ -697,7 +805,7 @@ public class Bot {
     }
 
     private static long movesTest(State state, int depth) {
-        int logDepth = 1;
+        int logDepth = 5;
 
         if (depth == 0) {
             return 1;

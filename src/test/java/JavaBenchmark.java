@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static com.example.demo.ai.Util.bit;
 import static com.example.demo.ai.Util.bitmapAdd;
@@ -96,9 +97,9 @@ public class JavaBenchmark {
         long map = 15L;
 
         long start = System.nanoTime();
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 100000; i++) {
             ArrayList<Long> temp = new ArrayList<>();
-            for (int j = 0; j < 5; j++) {
+            for (int j = 0; j < 9; j++) {
                 temp.add(map);
             }
         }
@@ -107,13 +108,68 @@ public class JavaBenchmark {
 
 
         start = System.nanoTime();
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 100000; i++) {
             ArrayList<ArrayList<Integer>> temp = new ArrayList<>();
-            for (int j = 0; j < 5; j++) {
+            for (int j = 0; j < 9; j++) {
                 temp.add(list);
             }
         }
         end = (System.nanoTime() - start) / 1000000.0;
         log("list", end);
+
+        start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            long[] temp = new long[10];
+            int index = 0;
+            arrayHelper(temp, index);
+        }
+        end = (System.nanoTime() - start) / 1000000.0;
+        log("array", end);
+    }
+
+    private void arrayHelper(long[] temp, int index) {
+        for (int j = 0; j < 9; j++) {
+            temp[index++] = 15L;
+        }
+    }
+
+    @Test
+    void testArrayCloneMethods() {
+        long[] array = {818568391L, 2984657982L, 26428L, 7902806280652480L, 17857818751L, 5178L, 51789571835L};
+
+        long start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            long[] copy = new long[array.length];
+            System.arraycopy(array, 0, copy, 0, array.length);
+        }
+        double end = (System.nanoTime() - start) / 1000000.0;
+        log("system", end);
+
+
+        start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            long[] copy = Arrays.copyOf(array, array.length);
+        }
+        end = (System.nanoTime() - start) / 1000000.0;
+        log("Arrays copy", end);
+
+
+        start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            long[] copy = array.clone();
+        }
+        end = (System.nanoTime() - start) / 1000000.0;
+        log("clone", end);
+
+
+        start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            long[] copy = new long[array.length];
+            for (int j = 0; j < array.length; j++) {
+                copy[j] = array[j];
+            }
+        }
+        end = (System.nanoTime() - start) / 1000000.0;
+        log("manual", end);
     }
 }

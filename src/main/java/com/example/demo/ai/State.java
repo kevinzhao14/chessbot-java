@@ -25,7 +25,7 @@ public class State {
     private int enPassant;
     private Check check;
     private Group<Integer> kings;
-    private Group<HashMap<Integer, ArrayList<Long>>> control;
+    private Group<HashMap<Integer, long[]>> control;
     private ArrayList<Pin> pins;
 
     public State() {
@@ -61,6 +61,9 @@ public class State {
         state.turn = this.turn;
         state.won = this.won;
 
+//        boolean[] cw = this.castle.white();
+//        boolean[] cb = this.castle.black();
+//        state.castle = new Group<>(new boolean[]{cw[0], cw[1]}, new boolean[]{cb[0], cb[1]});
         state.castle = new Group<>(this.castle.white().clone(), this.castle.black().clone());
         state.enPassant = this.enPassant;
         if (this.check != null) {
@@ -68,23 +71,25 @@ public class State {
         }
         state.kings = new Group<>(this.kings.white(), this.kings.black());
 
-        HashMap<Integer, ArrayList<Long>> controlWhite = null;
+        HashMap<Integer, long[]> controlWhite = null;
         if (this.control.white() != null) {
             controlWhite = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.white().entrySet()) {
+            for (Map.Entry<Integer, long[]> entry : this.control.white().entrySet()) {
                 int pos = entry.getKey();
-                ArrayList<Long> currPaths = entry.getValue();
-                controlWhite.put(pos, (ArrayList<Long>) currPaths.clone());
+                long[] currPaths = entry.getValue();
+                controlWhite.put(pos, Arrays.copyOf(currPaths, currPaths.length));
+//                controlWhite.put(pos, currPaths.clone());
             }
 
         }
-        HashMap<Integer, ArrayList<Long>> controlBlack = null;
+        HashMap<Integer, long[]> controlBlack = null;
         if (this.control.black() != null) {
             controlBlack = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.black().entrySet()) {
+            for (Map.Entry<Integer, long[]> entry : this.control.black().entrySet()) {
                 int pos = entry.getKey();
-                ArrayList<Long> currPaths = entry.getValue();
-                controlBlack.put(pos, (ArrayList<Long>) currPaths.clone());
+                long[] currPaths = entry.getValue();
+                controlBlack.put(pos, Arrays.copyOf(currPaths, currPaths.length));
+//                controlBlack.put(pos, currPaths.clone());
             }
         }
 
@@ -99,7 +104,7 @@ public class State {
     }
 
     public void calcControls(Side side) {
-        HashMap<Integer, ArrayList<Long>> control = new HashMap<>();
+        HashMap<Integer, long[]> control = new HashMap<>();
         ArrayList<Pin> pins = new ArrayList<>();
 
         for (int i = 0; i < 64; i++) {
@@ -121,10 +126,13 @@ public class State {
             return null;
         }
         ArrayList<Pair<Integer, Long>> pathList = new ArrayList<>();
-        for (Map.Entry<Integer, ArrayList<Long>> entry : this.control.get(side).entrySet()) {
+        for (Map.Entry<Integer, long[]> entry : this.control.get(side).entrySet()) {
             int by = entry.getKey();
-            ArrayList<Long> paths = entry.getValue();
+            long[] paths = entry.getValue();
             for (long path : paths) {
+                if (path == 0) {
+                    continue;
+                }
                 for (int i = 0; i < 64; i++) {
                     if (!bitmapHas(path, bit(i))) {
                         continue;
@@ -199,7 +207,7 @@ public class State {
         this.pins = pins;
     }
 
-    public Group<HashMap<Integer, ArrayList<Long>>> getControl() {
+    public Group<HashMap<Integer, long[]>> getControl() {
         return control;
     }
 
