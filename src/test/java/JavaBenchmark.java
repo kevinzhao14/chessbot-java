@@ -99,7 +99,7 @@ public class JavaBenchmark {
         long start = System.nanoTime();
         for (int i = 0; i < 100000; i++) {
             ArrayList<Long> temp = new ArrayList<>();
-            for (int j = 0; j < 9; j++) {
+            for (int j = 0; j < 2; j++) {
                 temp.add(map);
             }
         }
@@ -110,7 +110,7 @@ public class JavaBenchmark {
         start = System.nanoTime();
         for (int i = 0; i < 100000; i++) {
             ArrayList<ArrayList<Integer>> temp = new ArrayList<>();
-            for (int j = 0; j < 9; j++) {
+            for (int j = 0; j < 2; j++) {
                 temp.add(list);
             }
         }
@@ -128,7 +128,7 @@ public class JavaBenchmark {
     }
 
     private void arrayHelper(long[] temp, int index) {
-        for (int j = 0; j < 9; j++) {
+        for (int j = 0; j < 2; j++) {
             temp[index++] = 15L;
         }
     }
