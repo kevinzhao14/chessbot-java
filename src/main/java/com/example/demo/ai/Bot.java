@@ -436,7 +436,7 @@ public class Bot {
                         sim.remove(p);
                         sim.remove(tp - dir);
                         sim.calcControls(side.opp());
-                        if (sim.isControlled(sim.kings().get(side), side.opp()) == null) {
+                        if (sim.isControlled(sim.kings().get(side)) == null) {
                             moves.add(tp);
                         }
                     } else if (take != 0 && sideOf(take) != side) {
@@ -480,17 +480,17 @@ public class Bot {
                 }
 
                 // castling
-                if (!getControl && state.isControlled(p, side.opp()) == null) {
+                if (!getControl && state.isControlled(p) == null) {
                     boolean[] castle = state.castle().get(side);
                     if (castle[0] && state.at(p + 1) == 0
                     && state.at(p + 2) == 0
-                    && state.isControlled(p + 1, side.opp()) == null) {
+                    && state.isControlled(p + 1) == null) {
                         moves.add(p + 2);
                     }
                     if (castle[1] && state.at(p - 1) == 0
                     && state.at(p - 2) == 0
                     && state.at(p - 3) == 0
-                    && state.isControlled(p - 1, side.opp()) == null) {
+                    && state.isControlled(p - 1) == null) {
                         moves.add(p - 2);
                     }
                 }
@@ -537,7 +537,7 @@ public class Bot {
                     }
 
                     // king moving to a controlled square
-                    if ((isKing && state.isControlled(move, side.opp()) != null)
+                    if ((isKing && state.isControlled(move) != null)
                             || (!isKing && inCheck && !checkMoves.contains(move))) {
                         moves.remove(i);
                         i--;

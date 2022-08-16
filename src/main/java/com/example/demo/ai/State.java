@@ -22,7 +22,7 @@ public class State {
     private int enPassant;
     private Check check;
     private Group<Integer> kings;
-    private Group<HashMap<Integer, ArrayList<ArrayList<Integer>>>> control;
+    private HashMap<Integer, ArrayList<ArrayList<Integer>>> control;
     private ArrayList<Pin> pins;
 
     public State() {
@@ -33,7 +33,7 @@ public class State {
         this.enPassant = -1;
         this.check = null;
         this.kings = new Group<>(-1, -1);
-        this.control = new Group<>(null, null); // TODO: convert to arrays
+        this.control = null; // TODO: convert to arrays
         this.pins = null;
     }
 
@@ -65,35 +65,18 @@ public class State {
         }
         state.kings = new Group<>(this.kings.white(), this.kings.black());
 
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlWhite = null;
-        if (this.control.white() != null) {
-            controlWhite = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.white().entrySet()) {
-                int pos = entry.getKey();
-                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
-                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : currPaths) {
-                    paths.add((ArrayList<Integer>) path.clone());
-                }
-                controlWhite.put(pos, paths);
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> control = new HashMap<>();
+        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.entrySet()) {
+            int pos = entry.getKey();
+            ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
+            ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
+            for (ArrayList<Integer> path : currPaths) {
+                paths.add((ArrayList<Integer>) path.clone());
             }
-
-        }
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> controlBlack = null;
-        if (this.control.black() != null) {
-            controlBlack = new HashMap<>();
-            for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.black().entrySet()) {
-                int pos = entry.getKey();
-                ArrayList<ArrayList<Integer>> currPaths = entry.getValue();
-                ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
-                for (ArrayList<Integer> path : currPaths) {
-                    paths.add((ArrayList<Integer>) path.clone());
-                }
-                controlBlack.put(pos, paths);
-            }
+            control.put(pos, paths);
         }
 
-        state.control = new Group<>(controlWhite, controlBlack);
+        state.control = control;
 
         state.pins = new ArrayList<>();
         for (Pin p : this.pins) {
@@ -117,16 +100,13 @@ public class State {
                 pins.addAll(squares.pins());
         }
 
-        this.control.set(side, control);
-        this.pins(pins);
+        this.control = control;
+        this.pins = pins;
     }
 
-    public ArrayList<Pair<Integer, ArrayList<Integer>>> isControlled(int pos, Side side) {
-        if (this.control.get(side) == null) {
-            return null;
-        }
+    public ArrayList<Pair<Integer, ArrayList<Integer>>> isControlled(int pos) {
         ArrayList<Pair<Integer, ArrayList<Integer>>> pathList = new ArrayList<>();
-        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.get(side).entrySet()) {
+        for (Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry : this.control.entrySet()) {
             int by = entry.getKey();
             ArrayList<ArrayList<Integer>> paths = entry.getValue();
             for (ArrayList<Integer> path : paths) {
@@ -142,7 +122,7 @@ public class State {
 
     public boolean calcCheck() {
         int kingPos = this.kings.get(this.turn);
-        ArrayList<Pair<Integer, ArrayList<Integer>>> isCheck = this.isControlled(kingPos, this.turn.opp());
+        ArrayList<Pair<Integer, ArrayList<Integer>>> isCheck = this.isControlled(kingPos);
         if (isCheck != null) {
             if (isCheck.size() == 1) {
                 Pair<Integer, ArrayList<Integer>> check = isCheck.get(0);
