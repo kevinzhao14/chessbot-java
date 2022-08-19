@@ -18,10 +18,12 @@ import static com.example.demo.ai.Util.an;
 import static com.example.demo.ai.Util.bit;
 import static com.example.demo.ai.Util.bitmapAdd;
 import static com.example.demo.ai.Util.bitmapHas;
+import static com.example.demo.ai.Util.eval;
 import static com.example.demo.ai.Util.is;
 import static com.example.demo.ai.Util.isBlack;
 import static com.example.demo.ai.Util.log;
 import static com.example.demo.ai.Util.offBoard;
+import static com.example.demo.ai.Util.pieceValue;
 import static com.example.demo.ai.Util.sideOf;
 
 public class Bot {
@@ -29,11 +31,11 @@ public class Bot {
 
     static int MULT = 1;
 
-    static boolean DEBUG = false;
+    static boolean DEBUG = true;
 
     static boolean LOG = false;
 
-    static boolean EXTRA_DEPTH = true;
+    static boolean EXTRA_DEPTH = false;
 
     private static int nodes = 0;
 
@@ -46,7 +48,7 @@ public class Bot {
 
 
         // TODO: extraDepth
-        int extraDepth = (int) Math.floor((32 - state.count()) / 16.0);
+        int extraDepth = (int) Math.floor((32 - state.count()) / 14.0);
         if (EXTRA_DEPTH && extraDepth > 0) {
             DEPTH += extraDepth;
             System.out.println("Extra depth: " + DEPTH);
@@ -55,10 +57,6 @@ public class Bot {
         long start = System.nanoTime();
         MoveInfo best = bestMove(state);
         double total = (System.nanoTime() - start) / 1000000.0;
-
-        if (EXTRA_DEPTH) {
-            DEPTH -= extraDepth;
-        }
 
         int from = -1;
         int to = -1;
@@ -88,8 +86,14 @@ public class Bot {
 
         System.out.println("\nMove: " + from + " -> " + to);
 
-        best.score /= MULT == 1 ? 1.0 : ((MULT - Math.pow(MULT, DEPTH)) / (1.0 - MULT));
-        System.out.println("Score: " + Math.round(best.score * 1000) / 1000);
+        res.setEval(Math.round(best.score * 1000) / 1000.0);
+        System.out.println("Score: " + res.getEval());
+
+
+        if (EXTRA_DEPTH) {
+            DEPTH -= extraDepth;
+        }
+
 
         StringBuilder line = new StringBuilder("Line: ");
 
@@ -187,7 +191,7 @@ public class Bot {
 
     static MoveInfo bestMove(State state, int depth, boolean hasAlpha, Double alpha) {
         if (depth == 0) {
-            return new MoveInfo(null, 0, new LinkedList<>());
+            return new MoveInfo(null, eval(state), new LinkedList<>());
         }
         HashMap<Integer, ArrayList<Integer>> valid = allValidMoves(state);
 
@@ -226,12 +230,11 @@ public class Bot {
             nodes++;
 
             State simState = simMove(state, from, to);
-            double score = Util.eval(simState);
+            double score = 0;
             LinkedList<Move> line = new LinkedList<>();
 
             if (simState.won() == Side.NONE) {
-                double beta = (bestScore - score) / MULT;
-                MoveInfo childBest = bestMove(simState, depth - 1, useBeta, beta);
+                MoveInfo childBest = bestMove(simState, depth - 1, useBeta, bestScore);
 
                 if (childBest.move != null) {
                     line.addAll(0, childBest.line);
@@ -239,9 +242,11 @@ public class Bot {
                     childBest.move.setLine(null);
                 }
 
-                score += MULT * childBest.score;
-            } else {
-                score *= 1 + (double) depth / DEPTH;
+                score = childBest.score;
+            } else if (simState.won() != Side.DRAW) {
+                int mult = isBlack(simState.won()) ? -1 : 1;
+                score = (1000 + (DEPTH - depth + 1)) * mult;
+                score += depth * 100 * mult;
             }
 
             if (best.size() == 0 || (isBlack(state.turn()) ? score <= bestScore : score >= bestScore)) {
@@ -337,7 +342,6 @@ public class Bot {
 
                     int pos = Util.go(p, i);
                     while (!Util.offBoard(pos)) {
-//                    if (getControl && p.equals(new Pos(4, 1))) log("p", i, pos, path, control);
                         char ap = state.at(pos);
 
                         if (ap != 0) {

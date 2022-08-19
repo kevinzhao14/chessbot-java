@@ -22,3 +22,10 @@ ID   | Type  | Description
 18   | ~OPT   | ~~move goPath outside of getValidMoves - SLOWER~~
 19   | ~OPT   | ~~change control to be one side, not a group~~
 20   | OPT   | use static final instead of enum for side
+21   | FEAT  | improve eval
+22   | OPT   | include list of pieces as well as the board
+23   | FEAT  | different move orderings (10x tp - fp, fp)
+24   | FEAT  | return mate in X for eval
+25   | ~BUG   | ~~fix state weighting so later states aren't ignored - eg queen sac because over the test period the average eval is higher~~
+26   | BUG   | possibly iterating over too many nodes for easy captures - check ordering or alpha/beta
+27   | FEAT  | transposition tables

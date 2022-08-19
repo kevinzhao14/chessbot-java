@@ -3,6 +3,7 @@ package com.example.demo.ai;
 import com.example.demo.ai.objects.Check;
 import com.example.demo.ai.objects.Group;
 import com.example.demo.ai.objects.Pair;
+import com.example.demo.ai.objects.Phase;
 import com.example.demo.ai.objects.Pin;
 import com.example.demo.ai.objects.Side;
 import com.example.demo.ai.objects.ValidMoves;
@@ -24,6 +25,7 @@ public class State {
     private Group<Integer> kings;
     private HashMap<Integer, ArrayList<ArrayList<Integer>>> control;
     private ArrayList<Pin> pins;
+    private Phase phase;
 
     public State() {
         this.board = new char[64];
@@ -35,6 +37,7 @@ public class State {
         this.kings = new Group<>(-1, -1);
         this.control = null;
         this.pins = null;
+        this.phase = Phase.OPEN;
     }
 
     public char at(int pos) {
@@ -91,13 +94,13 @@ public class State {
         ArrayList<Pin> pins = new ArrayList<>();
 
         for (int i = 0; i < 64; i++) {
-                char piece = this.board[i];
-                if (Util.sideOf(piece) != side) {
-                    continue;
-                }
-                ValidMoves squares = Bot.getValidMoves(piece, i, this, true);
-                control.put(i, squares.control());
-                pins.addAll(squares.pins());
+            char piece = this.board[i];
+            if (Util.sideOf(piece) != side) {
+                continue;
+            }
+            ValidMoves squares = Bot.getValidMoves(piece, i, this, true);
+            control.put(i, squares.control());
+            pins.addAll(squares.pins());
         }
 
         this.control = control;
