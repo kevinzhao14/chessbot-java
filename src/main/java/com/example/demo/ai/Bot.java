@@ -24,6 +24,7 @@ import static com.example.demo.ai.Util.isBlack;
 import static com.example.demo.ai.Util.log;
 import static com.example.demo.ai.Util.offBoard;
 import static com.example.demo.ai.Util.pieceValue;
+import static com.example.demo.ai.Util.pieceValueDiff;
 import static com.example.demo.ai.Util.sideOf;
 
 public class Bot {
@@ -200,14 +201,33 @@ public class Bot {
             int from = entry.getKey();
             ArrayList<Integer> tos = entry.getValue();
             for (int to : tos) {
+
+                // move ordering heuristic
                 char toPiece = state.at(to);
                 double score = 0;
+
+                // capture heuristic
+                char fromPiece = state.at(from);
                 if (toPiece != 0) {
-                    score = Util.pieceValue(toPiece, to);
+                    score = pieceValue(toPiece, to) * 9 - pieceValue(fromPiece, from);
+                } else {
+                    int tempTo = to;
+                    if (is(fromPiece, 'p')) {
+                        if (to > 63) {
+                            tempTo = 56 + to % 8;
+                        } else if (to < 0) {
+                            tempTo = (to + 1) % 8 + 7;
+                        }
+                    }
+                    score = pieceValueDiff(fromPiece, from, tempTo);
                 }
+
+
                 validMoves.add(new Move(from, to, score));
             }
         }
+
+        // Order moves
         validMoves.sort((o1, o2) -> {
             double diff = o2.score() - o1.score();
             if (diff < 0) {

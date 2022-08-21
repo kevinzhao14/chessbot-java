@@ -109,6 +109,29 @@ public class Util {
         }
     }
 
+    static double pieceValueDiff(char piece, int from, int to) {
+        if (isBlack(sideOf(piece))) {
+            from = (7 - (from / 8)) * 8 + from % 8;
+            to = (7 - (to / 8)) * 8 + to % 8;
+        }
+        switch (Character.toLowerCase(piece)) {
+            case 'p':
+                return Static.BONUS_P[to] - Static.BONUS_P[from];
+            case 'r':
+                return Static.BONUS_R[to] - Static.BONUS_R[from];
+            case 'b':
+                return Static.BONUS_B[to] - Static.BONUS_B[from];
+            case 'n':
+                return Static.BONUS_N[to] - Static.BONUS_N[from];
+            case 'q':
+                return Static.BONUS_Q[to] - Static.BONUS_Q[from];
+            case 'k':
+                return Static.BONUS_K[to] - Static.BONUS_K[from];
+            default:
+                return 0;
+        }
+    }
+
     static boolean offBoard(int pos) {
         return pos < 0 || pos > 63;
     }

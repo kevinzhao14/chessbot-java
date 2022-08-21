@@ -25,7 +25,7 @@ ID   | Type  | Description
 21   | FEAT  | improve eval
 22   | OPT   | include list of pieces as well as the board
 23   | FEAT  | different move orderings (10x tp - fp, fp)
-24   | FEAT  | return mate in X for eval
+24   | ~FEAT  | ~~return mate in X for eval~~
 25   | ~BUG   | ~~fix state weighting so later states aren't ignored - eg queen sac because over the test period the average eval is higher~~
 26   | BUG   | possibly iterating over too many nodes for easy captures - check ordering or alpha/beta
 27   | FEAT  | transposition tables
