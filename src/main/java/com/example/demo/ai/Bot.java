@@ -28,7 +28,7 @@ import static com.example.demo.ai.Util.pieceValueDiff;
 import static com.example.demo.ai.Util.sideOf;
 
 public class Bot {
-    static int DEPTH = 5;
+    static int DEPTH = 4;
 
     static int MULT = 1;
 
